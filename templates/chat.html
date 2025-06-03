@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ room_name }} - 聊天室</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="chat-title">
+                <h1>{{ room_name }}</h1>
+                <a href="/" class="back-btn">← 返回聊天室列表</a>
+            </div>
+            <div class="user-status" id="userStatus">
+                <span id="username-display"></span>
+                <span class="status-indicator" id="connectionStatus">连接中...</span>
+            </div>
+        </header>
+
+        <div class="chat-layout">
+            <!-- 聊天消息区域 -->
+            <main class="chat-main">
+                <div class="messages-container" id="messagesContainer">
+                    <!-- 历史消息会在这里显示 -->
+                </div>
+                
+                <!-- 消息输入区域 -->
+                <div class="message-input-container">
+                    <form id="messageForm" class="message-form">
+                        <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off" disabled>
+                        <button type="submit" id="sendButton" disabled>发送</button>
+                    </form>
+                </div>
+            </main>
+
+            <!-- 侧边栏：在线用户 -->
+            <aside class="chat-sidebar">
+                <h3>在线用户</h3>
+                <ul id="usersList" class="users-list">
+                    <!-- 在线用户列表会在这里显示 -->
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 设置昵称模态框 -->
+    <div id="usernameModal" class="modal modal-open">
+        <div class="modal-content">
+            <h2>设置您的昵称</h2>
+            <form id="usernameForm">
+                <div class="form-group">
+                    <label for="usernameInput">昵称：</label>
+                    <input type="text" id="usernameInput" name="username" required placeholder="输入您的昵称" maxlength="20">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">开始聊天</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 传递服务器数据到前端
+        window.chatData = {
+            roomName: "{{ room_name }}",
+            messages: {{ messages | tojson }}
+        };
+    </script>
+    <script src="/static/chat.js"></script>
+</body>
+</html> 

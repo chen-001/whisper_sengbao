@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多人在线聊天室</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>多人在线聊天室</h1>
+            <p>选择一个聊天室开始聊天，或者创建新的聊天室</p>
+        </header>
+
+        <main class="main-content">
+            <!-- 创建新聊天室 -->
+            <section class="create-room-section">
+                <h2>创建新聊天室</h2>
+                <form id="createRoomForm" class="create-room-form">
+                    <div class="form-group">
+                        <label for="room_name">聊天室名称：</label>
+                        <input type="text" id="room_name" name="room_name" required placeholder="输入聊天室名称">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">描述（可选）：</label>
+                        <input type="text" id="description" name="description" placeholder="描述这个聊天室的主题">
+                    </div>
+                    <button type="submit" class="btn btn-primary">创建聊天室</button>
+                </form>
+            </section>
+
+            <!-- 聊天室列表 -->
+            <section class="room-list-section">
+                <h2>聊天室列表</h2>
+                <div class="room-grid" id="roomGrid">
+                    {% for room in rooms %}
+                    <div class="room-card">
+                        <h3 class="room-name">{{ room.name }}</h3>
+                        <p class="room-description">{{ room.description or "暂无描述" }}</p>
+                        <div class="room-actions">
+                            <button class="btn btn-secondary" onclick="joinRoom('{{ room.name }}')">
+                                加入聊天室
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 加入聊天室模态框 -->
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>加入聊天室</h2>
+            <form id="joinForm">
+                <div class="form-group">
+                    <label for="username">您的昵称：</label>
+                    <input type="text" id="username" name="username" required placeholder="输入您的昵称">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">加入聊天</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html> 
