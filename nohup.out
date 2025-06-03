@@ -92,3 +92,6 @@ INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
 INFO:     ('103.152.113.135', 48447) - "WebSocket /ws/%E5%83%A7%E5%AE%9D" [accepted]
 INFO:     connection open
+INFO:     connection closed
+INFO:     ('123.191.61.24', 38192) - "WebSocket /ws/%E5%83%A7%E5%AE%9D" [accepted]
+INFO:     connection open
