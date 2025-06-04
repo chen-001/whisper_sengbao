@@ -19,6 +19,15 @@ document.addEventListener('DOMContentLoaded', function() {
             closeModal();
         }
     });
+
+    // 主题切换处理
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+
+    // 加载保存的主题
+    loadTheme();
 });
 
 // 处理创建聊天室
@@ -111,4 +120,37 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
     }
-}); 
+});
+
+// 主题切换功能
+function toggleTheme() {
+    const body = document.body;
+    const themeToggle = document.getElementById('themeToggle');
+    const isForestTheme = body.classList.contains('forest-theme');
+    
+    if (isForestTheme) {
+        body.classList.remove('forest-theme');
+        themeToggle.querySelector('.theme-toggle-icon').textContent = '🌸';
+        themeToggle.querySelector('.theme-toggle-text').textContent = '森林';
+        localStorage.setItem('chatTheme', 'dreamy');
+    } else {
+        body.classList.add('forest-theme');
+        themeToggle.querySelector('.theme-toggle-icon').textContent = '🌳';
+        themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+        localStorage.setItem('chatTheme', 'forest');
+    }
+}
+
+// 加载保存的主题
+function loadTheme() {
+    const savedTheme = localStorage.getItem('chatTheme');
+    const themeToggle = document.getElementById('themeToggle');
+    
+    if (savedTheme === 'forest') {
+        document.body.classList.add('forest-theme');
+        if (themeToggle) {
+            themeToggle.querySelector('.theme-toggle-icon').textContent = '🌳';
+            themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+        }
+    }
+} 

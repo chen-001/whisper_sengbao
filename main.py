@@ -133,6 +133,24 @@ async def create_room(room_name: str = Form(...), description: str = Form("")):
     else:
         return {"status": "error", "message": "聊天室名称已存在"}
 
+@app.get("/api/messages/{room_name}")
+async def get_more_messages(room_name: str, before: str = None, limit: int = 50):
+    """获取更多历史消息（分页API）"""
+    try:
+        messages = db.get_messages(room_name, limit, before)
+        total_count = db.get_message_count(room_name)
+        has_more = len(messages) == limit and total_count > limit
+        
+        return {
+            "status": "success",
+            "messages": messages,
+            "has_more": has_more,
+            "total_count": total_count
+        }
+    except Exception as e:
+        print(f"获取消息错误: {e}")
+        return {"status": "error", "message": "获取消息失败"}
+
 @app.websocket("/ws/{room_name}")
 async def websocket_endpoint(websocket: WebSocket, room_name: str):
     """WebSocket连接端点"""
@@ -174,17 +192,26 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
             
             if message_data.get("type") == "message":
                 message = message_data.get("message", "").strip()
+                quoted_message = message_data.get("quotedMessage")
+                
                 if message:
                     # 保存消息到数据库
                     db.save_message(room_name, username, message)
                     
-                    # 广播消息到房间内所有用户
-                    await manager.broadcast_to_room(room_name, {
+                    # 构建广播消息
+                    broadcast_data = {
                         "type": "message",
                         "username": username,
                         "message": message,
                         "timestamp": message_data.get("timestamp")
-                    })
+                    }
+                    
+                    # 如果有引用消息，添加到广播数据中
+                    if quoted_message:
+                        broadcast_data["quotedMessage"] = quoted_message
+                    
+                    # 广播消息到房间内所有用户
+                    await manager.broadcast_to_room(room_name, broadcast_data)
     
     except WebSocketDisconnect:
         if 'user_id' in locals() and user_id:

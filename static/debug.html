@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>引用功能调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-message {
+            background: #fff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            user-select: none;
+        }
+        .test-message:hover {
+            background: #f0f8ff;
+        }
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1000;
+        }
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+        .context-menu-item:hover {
+            background: #f0f0f0;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>引用功能调试测试</h1>
+    <p>请尝试以下操作：</p>
+    <ul>
+        <li>右键点击下面的消息</li>
+        <li>长按消息（500ms）</li>
+        <li>在移动设备上长按消息</li>
+    </ul>
+
+    <div class="test-message" data-username="测试用户1" data-message="这是第一条测试消息">
+        <strong>测试用户1:</strong> 这是第一条测试消息
+    </div>
+
+    <div class="test-message" data-username="测试用户2" data-message="这是第二条测试消息，用来测试引用功能">
+        <strong>测试用户2:</strong> 这是第二条测试消息，用来测试引用功能
+    </div>
+
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" data-action="quote">💬 引用消息</div>
+        <div class="context-menu-item" data-action="more">⚙️ 更多选项</div>
+    </div>
+
+    <div class="log" id="log">
+        <div>调试日志将在这里显示...</div>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+        const contextMenu = document.getElementById('contextMenu');
+        let selectedMessage = null;
+        let longPressTimer = null;
+
+        function addLog(message) {
+            const div = document.createElement('div');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function showContextMenu(event, messageEl) {
+            addLog(`显示上下文菜单 - 消息: ${messageEl.dataset.message}`);
+            
+            selectedMessage = {
+                username: messageEl.dataset.username,
+                message: messageEl.dataset.message,
+                element: messageEl
+            };
+
+            contextMenu.style.display = 'block';
+            
+            let x, y;
+            if (event.touches && event.touches.length > 0) {
+                x = event.touches[0].clientX;
+                y = event.touches[0].clientY;
+            } else {
+                x = event.clientX;
+                y = event.clientY;
+            }
+
+            contextMenu.style.left = x + 'px';
+            contextMenu.style.top = y + 'px';
+            addLog(`菜单位置: ${x}, ${y}`);
+        }
+
+        function hideContextMenu() {
+            contextMenu.style.display = 'none';
+            selectedMessage = null;
+            addLog('隐藏上下文菜单');
+        }
+
+        function handleQuote() {
+            if (!selectedMessage) {
+                addLog('错误: 没有选中的消息');
+                return;
+            }
+            addLog(`引用消息: ${selectedMessage.username} - ${selectedMessage.message}`);
+            alert(`引用成功!\n用户: ${selectedMessage.username}\n消息: ${selectedMessage.message}`);
+        }
+
+        // 绑定事件
+        document.querySelectorAll('.test-message').forEach(messageEl => {
+            // 右键点击
+            messageEl.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                addLog('右键点击事件触发');
+                showContextMenu(e, messageEl);
+            });
+
+            // 长按事件
+            messageEl.addEventListener('mousedown', (e) => {
+                if (e.button === 0) {
+                    addLog('开始长按计时');
+                    longPressTimer = setTimeout(() => {
+                        addLog('长按触发');
+                        showContextMenu(e, messageEl);
+                    }, 500);
+                }
+            });
+
+            messageEl.addEventListener('mouseup', () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                    addLog('取消长按计时');
+                }
+            });
+
+            // 移动端
+            messageEl.addEventListener('touchstart', (e) => {
+                addLog('触摸开始');
+                longPressTimer = setTimeout(() => {
+                    addLog('移动端长按触发');
+                    showContextMenu(e, messageEl);
+                }, 500);
+            });
+
+            messageEl.addEventListener('touchend', (e) => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                    addLog('触摸结束，取消长按');
+                }
+            });
+        });
+
+        // 上下文菜单事件
+        contextMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const menuItem = e.target.closest('.context-menu-item');
+            if (menuItem) {
+                const action = menuItem.dataset.action;
+                addLog(`菜单项点击: ${action}`);
+                if (action === 'quote') {
+                    handleQuote();
+                }
+                hideContextMenu();
+            }
+        });
+
+        // 点击其他地方隐藏菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.context-menu')) {
+                hideContextMenu();
+            }
+        });
+
+        addLog('调试页面初始化完成');
+    </script>
+</body>
+</html> 

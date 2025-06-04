@@ -99,28 +99,57 @@ class ChatDatabase:
         conn.commit()
         conn.close()
     
-    def get_messages(self, room_name: str, limit: int = 50) -> List[Dict]:
-        """获取指定聊天室的消息历史"""
+    def get_messages(self, room_name: str, limit: int = 50, before_timestamp: Optional[str] = None) -> List[Dict]:
+        """获取指定聊天室的消息历史
+        
+        Args:
+            room_name: 聊天室名称
+            limit: 获取消息数量限制
+            before_timestamp: 获取此时间戳之前的消息（用于分页）
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('''
-            SELECT username, message, timestamp 
-            FROM messages 
-            WHERE room_name = ? 
-            ORDER BY timestamp DESC 
-            LIMIT ?
-        ''', (room_name, limit))
+        if before_timestamp:
+            # 分页查询：获取指定时间之前的消息
+            cursor.execute('''
+                SELECT id, username, message, timestamp 
+                FROM messages 
+                WHERE room_name = ? AND timestamp < ?
+                ORDER BY timestamp DESC 
+                LIMIT ?
+            ''', (room_name, before_timestamp, limit))
+        else:
+            # 初始查询：获取最新的消息
+            cursor.execute('''
+                SELECT id, username, message, timestamp 
+                FROM messages 
+                WHERE room_name = ? 
+                ORDER BY timestamp DESC 
+                LIMIT ?
+            ''', (room_name, limit))
         
         messages = []
         for row in cursor.fetchall():
             messages.append({
-                'username': row[0],
-                'message': row[1],
-                'timestamp': row[2]
+                'id': row[0],
+                'username': row[1],
+                'message': row[2],
+                'timestamp': row[3]
             })
         
         # 按时间正序返回（最早的在前面）
         messages.reverse()
         conn.close()
-        return messages 
+        return messages
+    
+    def get_message_count(self, room_name: str) -> int:
+        """获取指定聊天室的消息总数"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM messages WHERE room_name = ?', (room_name,))
+        count = cursor.fetchone()[0]
+        
+        conn.close()
+        return count 

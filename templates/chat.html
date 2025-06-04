@@ -7,6 +7,22 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <!-- 主题切换按钮 -->
+    <div class="theme-toggle" id="themeToggle">
+        <span class="theme-toggle-icon">🌸</span>
+        <span class="theme-toggle-text">森林</span>
+    </div>
+
+    <!-- 消息上下文菜单 -->
+    <div class="message-context-menu" id="messageContextMenu">
+        <div class="context-menu-item" data-action="quote">
+            <span>💬</span>引用消息
+        </div>
+        <div class="context-menu-item" data-action="more">
+            <span>⚙️</span>更多选项
+        </div>
+    </div>
+
     <div class="chat-container">
         <header class="chat-header">
             <div class="chat-title">
@@ -23,6 +39,17 @@
             <!-- 聊天消息区域 -->
             <main class="chat-main">
                 <div class="messages-container" id="messagesContainer">
+                    <!-- 加载更多按钮 -->
+                    <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                        <button class="load-more-btn" id="loadMoreBtn">
+                            <span class="load-more-icon">📜</span>
+                            <span class="load-more-text">加载更早的消息</span>
+                            <span class="load-more-loading" style="display: none;">
+                                <span class="loading-spinner">⏳</span>
+                                加载中...
+                            </span>
+                        </button>
+                    </div>
                     <!-- 历史消息会在这里显示 -->
                 </div>
                 
