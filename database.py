@@ -31,6 +31,8 @@ class ChatDatabase:
                 username TEXT NOT NULL,
                 message TEXT NOT NULL,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                quoted_message_username TEXT,
+                quoted_message_text TEXT,
                 FOREIGN KEY (room_name) REFERENCES rooms (name)
             )
         ''')
@@ -86,15 +88,15 @@ class ChatDatabase:
             # 房间名已存在
             return False
     
-    def save_message(self, room_name: str, username: str, message: str) -> None:
+    def save_message(self, room_name: str, username: str, message: str, quoted_message_username: Optional[str] = None, quoted_message_text: Optional[str] = None) -> None:
         """保存消息到数据库"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO messages (room_name, username, message, timestamp) 
-            VALUES (?, ?, ?, ?)
-        ''', (room_name, username, message, datetime.now().isoformat()))
+            INSERT INTO messages (room_name, username, message, timestamp, quoted_message_username, quoted_message_text)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (room_name, username, message, datetime.now().isoformat(), quoted_message_username, quoted_message_text))
         
         conn.commit()
         conn.close()
@@ -113,7 +115,7 @@ class ChatDatabase:
         if before_timestamp:
             # 分页查询：获取指定时间之前的消息
             cursor.execute('''
-                SELECT id, username, message, timestamp 
+                SELECT id, username, message, timestamp, quoted_message_username, quoted_message_text
                 FROM messages 
                 WHERE room_name = ? AND timestamp < ?
                 ORDER BY timestamp DESC 
@@ -122,7 +124,7 @@ class ChatDatabase:
         else:
             # 初始查询：获取最新的消息
             cursor.execute('''
-                SELECT id, username, message, timestamp 
+                SELECT id, username, message, timestamp, quoted_message_username, quoted_message_text
                 FROM messages 
                 WHERE room_name = ? 
                 ORDER BY timestamp DESC 
@@ -131,12 +133,18 @@ class ChatDatabase:
         
         messages = []
         for row in cursor.fetchall():
-            messages.append({
+            message_data = {
                 'id': row[0],
                 'username': row[1],
                 'message': row[2],
                 'timestamp': row[3]
-            })
+            }
+            if row[4] and row[5]: # Check if quoted_message_username and quoted_message_text are present
+                message_data['quotedMessage'] = {
+                    'username': row[4],
+                    'message': row[5]
+                }
+            messages.append(message_data)
         
         # 按时间正序返回（最早的在前面）
         messages.reverse()

@@ -192,11 +192,23 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
             
             if message_data.get("type") == "message":
                 message = message_data.get("message", "").strip()
-                quoted_message = message_data.get("quotedMessage")
+                quoted_message_data = message_data.get("quotedMessage") # Renamed for clarity
                 
                 if message:
+                    quoted_username = None
+                    quoted_text = None
+                    if quoted_message_data:
+                        quoted_username = quoted_message_data.get("username")
+                        quoted_text = quoted_message_data.get("message")
+
                     # 保存消息到数据库
-                    db.save_message(room_name, username, message)
+                    db.save_message(
+                        room_name,
+                        username,
+                        message,
+                        quoted_message_username=quoted_username,
+                        quoted_message_text=quoted_text
+                    )
                     
                     # 构建广播消息
                     broadcast_data = {
@@ -207,8 +219,9 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
                     }
                     
                     # 如果有引用消息，添加到广播数据中
-                    if quoted_message:
-                        broadcast_data["quotedMessage"] = quoted_message
+                    # This part remains the same as the client sends `quotedMessage` in the desired structure
+                    if quoted_message_data:
+                        broadcast_data["quotedMessage"] = quoted_message_data
                     
                     # 广播消息到房间内所有用户
                     await manager.broadcast_to_room(room_name, broadcast_data)
