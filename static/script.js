@@ -237,7 +237,7 @@ function loadTheme() {
 
 // 功能更新弹窗相关函数
 function showUpdateModal() {
-    const currentVersion = '2025.07.21'; // 当前版本号
+    const currentVersion = '2025.07.21.v2'; // 当前版本号
     const lastShownVersion = localStorage.getItem('lastShownUpdateVersion');
     const dontShowUpdates = localStorage.getItem('dontShowUpdates') === 'true';
     
