@@ -39,6 +39,9 @@ class ChatClient {
         this.loadMoreBtn = document.getElementById('loadMoreBtn');
         this.notificationToggle = document.getElementById('notificationToggle');
         this.notificationStatus = document.getElementById('notificationStatus');
+        this.emojiButton = document.getElementById('emojiButton');
+        this.emojiPicker = document.getElementById('emojiPicker');
+        this.emojiGrid = document.getElementById('emojiGrid');
         
         // 绑定事件
         this.bindEvents();
@@ -48,6 +51,9 @@ class ChatClient {
         
         // 监听页面可见性变化
         this.initPageVisibility();
+        
+        // 初始化表情选择器
+        this.initEmojiPicker();
         
         // 尝试从localStorage获取用户名
         const savedUsername = localStorage.getItem('chatUsername');
@@ -119,6 +125,21 @@ class ChatClient {
             });
         }
 
+        // 表情按钮事件
+        if (this.emojiButton) {
+            this.emojiButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleEmojiPicker();
+            });
+        }
+
+        // 点击其他地方关闭表情选择器
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.message-input-container')) {
+                this.hideEmojiPicker();
+            }
+        });
+
         // 加载保存的主题
         this.loadTheme();
     }
@@ -159,6 +180,7 @@ class ChatClient {
                 // 启用消息输入
                 this.messageInput.disabled = false;
                 this.sendButton.disabled = false;
+                this.emojiButton.disabled = false;
                 this.messageInput.focus();
             };
             
@@ -175,6 +197,7 @@ class ChatClient {
                 // 禁用消息输入
                 this.messageInput.disabled = true;
                 this.sendButton.disabled = true;
+                this.emojiButton.disabled = true;
                 
                 // 尝试重连
                 setTimeout(() => {
@@ -750,6 +773,103 @@ class ChatClient {
         setTimeout(() => {
             notification.close();
         }, 3000);
+    }
+
+    // 初始化表情选择器
+    initEmojiPicker() {
+        // 表情数据按分类组织
+        this.emojiData = {
+            smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥'],
+            people: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤞', '✌️', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃'],
+            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜'],
+            food: ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞'],
+            activities: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛴', '🚁', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎫', '🎟️'],
+            travel: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛺', '🚁', '🛩️', '✈️', '🛫', '🛬', '🪂', '💺', '🚀', '🛸', '🚁', '🛶', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚢', '⚓', '⛽', '🚧', '🚦'],
+            objects: ['💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '💰', '💳', '💎', '⚖️', '🧰', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🔩', '⚙️', '🧲', '💣', '🧨', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭'],
+            symbols: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐']
+        };
+        
+        this.currentCategory = 'smileys';
+        this.renderEmojiGrid();
+    }
+
+    // 渲染表情网格
+    renderEmojiGrid() {
+        if (!this.emojiGrid) return;
+        
+        const emojis = this.emojiData[this.currentCategory] || [];
+        this.emojiGrid.innerHTML = '';
+        
+        emojis.forEach(emoji => {
+            const button = document.createElement('button');
+            button.className = 'emoji-item';
+            button.textContent = emoji;
+            button.addEventListener('click', () => {
+                this.insertEmoji(emoji);
+            });
+            this.emojiGrid.appendChild(button);
+        });
+    }
+
+    // 切换表情分类
+    switchEmojiCategory(category) {
+        this.currentCategory = category;
+        this.renderEmojiGrid();
+        
+        // 更新分类按钮状态
+        document.querySelectorAll('.emoji-category-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.category === category) {
+                btn.classList.add('active');
+            }
+        });
+    }
+
+    // 显示/隐藏表情选择器
+    toggleEmojiPicker() {
+        if (this.emojiPicker.classList.contains('show')) {
+            this.hideEmojiPicker();
+        } else {
+            this.showEmojiPicker();
+        }
+    }
+
+    showEmojiPicker() {
+        this.emojiPicker.classList.add('show');
+        
+        // 绑定分类按钮事件
+        document.querySelectorAll('.emoji-category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.switchEmojiCategory(btn.dataset.category);
+            });
+        });
+    }
+
+    hideEmojiPicker() {
+        this.emojiPicker.classList.remove('show');
+    }
+
+    // 插入表情到输入框
+    insertEmoji(emoji) {
+        const input = this.messageInput;
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        
+        // 在光标位置插入表情
+        const before = text.substring(0, start);
+        const after = text.substring(end);
+        input.value = before + emoji + after;
+        
+        // 移动光标到表情后面
+        const newPosition = start + emoji.length;
+        input.setSelectionRange(newPosition, newPosition);
+        
+        // 聚焦输入框
+        input.focus();
+        
+        // 隐藏表情选择器
+        this.hideEmojiPicker();
     }
 }
 

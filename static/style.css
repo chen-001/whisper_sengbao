@@ -678,9 +678,138 @@ body.forest-theme .room-card:hover {
     position: relative;
 }
 
+.input-group {
+    display: flex;
+    flex: 1;
+    position: relative;
+}
+
 .message-form input {
     flex: 1;
     padding: 12px 16px;
+    padding-right: 50px; /* 为表情按钮留空间 */
+}
+
+/* 表情按钮样式 */
+.emoji-button {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    margin-top: -15px; /* 使用负margin居中，避免transform */
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    z-index: 10;
+    height: 30px;
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* .emoji-button:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-50%);
+} */
+
+.emoji-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 表情选择器面板样式 */
+.emoji-picker {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: var(--current-card);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    backdrop-filter: blur(20px);
+    max-height: 320px;
+    margin-bottom: 10px;
+    display: none;
+    z-index: 1000;
+}
+
+.emoji-picker.show {
+    display: block;
+    animation: emojiPickerSlideUp 0.2s ease-out;
+}
+
+@keyframes emojiPickerSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.emoji-picker-header {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.emoji-categories {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+.emoji-category-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.emoji-category-btn:hover,
+.emoji-category-btn.active {
+    background: var(--current-accent);
+    opacity: 1;
+}
+
+.emoji-picker-content {
+    padding: 12px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+}
+
+.emoji-item {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-item:hover {
+    background: var(--current-accent);
+    transform: translateY(-1px) scale(1.05);
+}
     border: 2px solid rgba(255,255,255,0.3);
     border-radius: 25px;
     font-size: 16px;
@@ -804,6 +933,26 @@ body.forest-theme .room-card:hover {
     .theme-toggle {
         padding: 8px 15px;
         font-size: 0.85rem;
+    }
+    
+    /* 移动端表情选择器适配 */
+    .emoji-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .emoji-item {
+        font-size: 1.3rem;
+        padding: 6px;
+    }
+    
+    .emoji-categories {
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+    
+    .emoji-category-btn {
+        font-size: 1rem;
+        padding: 6px 8px;
     }
 }
 

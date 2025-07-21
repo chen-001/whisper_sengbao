@@ -62,9 +62,33 @@
                 <!-- 消息输入区域 -->
                 <div class="message-input-container">
                     <form id="messageForm" class="message-form">
-                        <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off" disabled>
+                        <div class="input-group">
+                            <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off" disabled>
+                            <button type="button" id="emojiButton" class="emoji-button" title="选择表情" disabled>😀</button>
+                        </div>
                         <button type="submit" id="sendButton" disabled>发送</button>
                     </form>
+                    
+                    <!-- 表情选择器面板 -->
+                    <div class="emoji-picker" id="emojiPicker">
+                        <div class="emoji-picker-header">
+                            <div class="emoji-categories">
+                                <button class="emoji-category-btn active" data-category="smileys">😀</button>
+                                <button class="emoji-category-btn" data-category="people">👋</button>
+                                <button class="emoji-category-btn" data-category="animals">🐶</button>
+                                <button class="emoji-category-btn" data-category="food">🍎</button>
+                                <button class="emoji-category-btn" data-category="activities">⚽</button>
+                                <button class="emoji-category-btn" data-category="travel">🚗</button>
+                                <button class="emoji-category-btn" data-category="objects">💡</button>
+                                <button class="emoji-category-btn" data-category="symbols">❤️</button>
+                            </div>
+                        </div>
+                        <div class="emoji-picker-content">
+                            <div class="emoji-grid" id="emojiGrid">
+                                <!-- 表情列表会通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </main>
 
