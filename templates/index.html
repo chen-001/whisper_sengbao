@@ -32,6 +32,11 @@
                         <label for="description">描述（可选）：</label>
                         <input type="text" id="description" name="description" placeholder="描述这个聊天室的主题">
                     </div>
+                    <div class="form-group">
+                        <label for="password">密码（可选）：</label>
+                        <input type="password" id="password" name="password" placeholder="设置密码保护聊天室（留空为无密码）">
+                        <small class="form-help">设置密码后，用户需要输入密码才能进入此聊天室</small>
+                    </div>
                     <button type="submit" class="btn btn-primary">创建聊天室</button>
                 </form>
             </section>
@@ -42,10 +47,15 @@
                 <div class="room-grid" id="roomGrid">
                     {% for room in rooms %}
                     <div class="room-card">
-                        <h3 class="room-name">{{ room.name }}</h3>
+                        <h3 class="room-name">
+                            {{ room.name }}
+                            {% if room.has_password %}
+                            <span class="lock-icon">🔒</span>
+                            {% endif %}
+                        </h3>
                         <p class="room-description">{{ room.description or "暂无描述" }}</p>
                         <div class="room-actions">
-                            <button class="btn btn-secondary" onclick="joinRoom('{{ room.name }}')">
+                            <button class="btn btn-secondary" onclick="joinRoom('{{ room.name }}', {{ room.has_password | tojson }})">
                                 加入聊天室
                             </button>
                         </div>
@@ -66,11 +76,57 @@
                     <label for="username">您的昵称：</label>
                     <input type="text" id="username" name="username" required placeholder="输入您的昵称">
                 </div>
+                <div class="form-group" id="passwordGroup" style="display: none;">
+                    <label for="roomPassword">聊天室密码：</label>
+                    <input type="password" id="roomPassword" name="roomPassword" placeholder="请输入聊天室密码">
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">加入聊天</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 功能更新弹窗 -->
+    <div id="updateModal" class="modal">
+        <div class="modal-content update-modal">
+            <span class="close" onclick="closeUpdateModal()">&times;</span>
+            <div class="update-header">
+                <h2>🎉 新功能上线啦！</h2>
+                <p class="version-info">版本更新 - 2025年7月</p>
+            </div>
+            <div class="update-content">
+                <div class="feature-item">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-info">
+                        <h3>聊天室密码保护</h3>
+                        <p>现在可以为聊天室设置密码，让您的私密对话更安全！创建聊天室时可以设置密码，只有知道密码的用户才能进入。</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">😊</div>
+                    <div class="feature-info">
+                        <h3>表情符号支持</h3>
+                        <p>现在可以在聊天中发送各种表情符号啦！让您的聊天更加生动有趣。试试发送 🎉 😊 ❤️ 🚀 等表情吧！</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🌟</div>
+                    <div class="feature-info">
+                        <h3>更多改进</h3>
+                        <p>优化了用户界面，提升了聊天体验，修复了一些已知问题。快来体验全新的聊天室吧！</p>
+                    </div>
+                </div>
+            </div>
+            <div class="update-footer">
+                <button class="btn btn-primary" onclick="closeUpdateModal()">知道了，开始使用！</button>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="dontShowAgain" onchange="toggleDontShowAgain()">
+                    <span class="checkmark"></span>
+                    不再显示此更新
+                </label>
+            </div>
         </div>
     </div>
 

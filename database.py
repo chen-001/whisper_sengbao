@@ -23,6 +23,13 @@ class ChatDatabase:
             )
         ''')
         
+        # 检查是否需要添加password列（数据库迁移）
+        cursor.execute("PRAGMA table_info(rooms)")
+        columns = [column[1] for column in cursor.fetchall()]
+        if 'password' not in columns:
+            cursor.execute('ALTER TABLE rooms ADD COLUMN password TEXT')
+            print("数据库迁移：已添加password列")
+        
         # 创建消息表
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS messages (
@@ -59,32 +66,51 @@ class ChatDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('SELECT name, description, created_at FROM rooms ORDER BY name')
+        cursor.execute('SELECT name, description, password, created_at FROM rooms ORDER BY name')
         rooms = []
         for row in cursor.fetchall():
             rooms.append({
                 'name': row[0],
                 'description': row[1],
-                'created_at': row[2]
+                'has_password': bool(row[2]),  # 只返回是否有密码，不返回密码本身
+                'created_at': row[3]
             })
         
         conn.close()
         return rooms
     
-    def create_room(self, name: str, description: str = "") -> bool:
+    def create_room(self, name: str, description: str = "", password: str = "") -> bool:
         """创建新聊天室"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            cursor.execute('INSERT INTO rooms (name, description) VALUES (?, ?)', 
-                         (name, description))
+            cursor.execute('INSERT INTO rooms (name, description, password) VALUES (?, ?, ?)', 
+                         (name, description, password if password else None))
             conn.commit()
             conn.close()
             return True
         except sqlite3.IntegrityError:
             # 房间名已存在
             return False
+    
+    def verify_room_password(self, room_name: str, password: str = "") -> bool:
+        """验证聊天室密码"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT password FROM rooms WHERE name = ?', (room_name,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result:
+            return False  # 房间不存在
+            
+        stored_password = result[0]
+        if stored_password is None:
+            return True  # 没有设置密码，可以直接进入
+        
+        return stored_password == password  # 密码匹配
     
     def save_message(self, room_name: str, username: str, message: str) -> None:
         """保存消息到数据库"""

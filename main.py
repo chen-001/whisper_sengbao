@@ -125,13 +125,21 @@ async def chat_room(request: Request, room_name: str):
     })
 
 @app.post("/create-room")
-async def create_room(room_name: str = Form(...), description: str = Form("")):
+async def create_room(room_name: str = Form(...), description: str = Form(""), password: str = Form("")):
     """创建新聊天室"""
-    success = db.create_room(room_name, description)
+    success = db.create_room(room_name, description, password)
     if success:
         return {"status": "success", "message": "聊天室创建成功"}
     else:
         return {"status": "error", "message": "聊天室名称已存在"}
+
+@app.post("/verify-room-password")
+async def verify_room_password(room_name: str = Form(...), password: str = Form("")):
+    """验证聊天室密码"""
+    if db.verify_room_password(room_name, password):
+        return {"status": "success", "message": "密码验证成功"}
+    else:
+        return {"status": "error", "message": "密码错误或聊天室不存在"}
 
 @app.get("/api/messages/{room_name}")
 async def get_more_messages(room_name: str, before: str = None, limit: int = 50):

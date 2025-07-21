@@ -1,6 +1,7 @@
 // 主页JavaScript逻辑
 
 let selectedRoom = null;
+let selectedRoomHasPassword = false;
 
 // DOM加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,6 +21,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // 功能更新模态框关闭处理
+    const updateModal = document.getElementById('updateModal');
+    updateModal.addEventListener('click', function(e) {
+        if (e.target === updateModal) {
+            closeUpdateModal();
+        }
+    });
+
     // 主题切换处理
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
@@ -28,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 加载保存的主题
     loadTheme();
+
+    // 显示功能更新弹窗
+    showUpdateModal();
 });
 
 // 处理创建聊天室
@@ -65,9 +77,23 @@ async function handleCreateRoom(e) {
 }
 
 // 加入聊天室
-function joinRoom(roomName) {
+function joinRoom(roomName, hasPassword = false) {
     selectedRoom = roomName;
+    selectedRoomHasPassword = hasPassword;
     const modal = document.getElementById('joinModal');
+    const passwordGroup = document.getElementById('passwordGroup');
+    const roomPasswordInput = document.getElementById('roomPassword');
+    
+    // 根据是否有密码显示/隐藏密码输入框
+    if (hasPassword) {
+        passwordGroup.style.display = 'block';
+        roomPasswordInput.setAttribute('required', 'required');
+    } else {
+        passwordGroup.style.display = 'none';
+        roomPasswordInput.removeAttribute('required');
+        roomPasswordInput.value = '';
+    }
+    
     modal.classList.add('modal-open');
     
     // 聚焦到用户名输入框
@@ -77,10 +103,11 @@ function joinRoom(roomName) {
 }
 
 // 处理加入聊天室表单提交
-function handleJoinRoom(e) {
+async function handleJoinRoom(e) {
     e.preventDefault();
     
     const username = document.getElementById('username').value.trim();
+    const roomPassword = document.getElementById('roomPassword').value;
     
     if (!username) {
         alert('请输入您的昵称');
@@ -97,6 +124,36 @@ function handleJoinRoom(e) {
         return;
     }
     
+    // 如果聊天室有密码，先验证密码
+    if (selectedRoomHasPassword) {
+        if (!roomPassword) {
+            alert('请输入聊天室密码');
+            return;
+        }
+        
+        try {
+            const formData = new FormData();
+            formData.append('room_name', selectedRoom);
+            formData.append('password', roomPassword);
+            
+            const response = await fetch('/verify-room-password', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.status !== 'success') {
+                alert(result.message || '密码错误');
+                return;
+            }
+        } catch (error) {
+            console.error('验证密码错误:', error);
+            alert('密码验证失败，请重试');
+            return;
+        }
+    }
+    
     // 将用户名保存到localStorage
     localStorage.setItem('chatUsername', username);
     
@@ -109,16 +166,24 @@ function closeModal() {
     const modal = document.getElementById('joinModal');
     modal.classList.remove('modal-open');
     selectedRoom = null;
+    selectedRoomHasPassword = false;
     
     // 清空表单
     document.getElementById('username').value = '';
+    document.getElementById('roomPassword').value = '';
+    
+    // 隐藏密码输入框
+    const passwordGroup = document.getElementById('passwordGroup');
+    passwordGroup.style.display = 'none';
+    document.getElementById('roomPassword').removeAttribute('required');
 }
 
 // 键盘事件处理
 document.addEventListener('keydown', function(e) {
-    // ESC键关闭模态框
+    // ESC键关闭所有模态框
     if (e.key === 'Escape') {
         closeModal();
+        closeUpdateModal();
     }
 });
 
@@ -153,4 +218,50 @@ function loadTheme() {
             themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
         }
     }
+}
+
+// 功能更新弹窗相关函数
+function showUpdateModal() {
+    const currentVersion = '2025.07.21'; // 当前版本号
+    const lastShownVersion = localStorage.getItem('lastShownUpdateVersion');
+    const dontShowUpdates = localStorage.getItem('dontShowUpdates') === 'true';
+    
+    // 如果用户选择了不再显示更新或已经看过当前版本，则不显示
+    if (dontShowUpdates || lastShownVersion === currentVersion) {
+        return;
+    }
+    
+    // 延迟显示弹窗，让页面先加载完成
+    setTimeout(() => {
+        const updateModal = document.getElementById('updateModal');
+        updateModal.classList.add('modal-open');
+        
+        // 记录已显示过当前版本
+        localStorage.setItem('lastShownUpdateVersion', currentVersion);
+    }, 1000);
+}
+
+function closeUpdateModal() {
+    const updateModal = document.getElementById('updateModal');
+    updateModal.classList.remove('modal-open');
+    
+    // 重置复选框状态
+    const dontShowCheckbox = document.getElementById('dontShowAgain');
+    dontShowCheckbox.checked = false;
+}
+
+function toggleDontShowAgain() {
+    const dontShowCheckbox = document.getElementById('dontShowAgain');
+    if (dontShowCheckbox.checked) {
+        localStorage.setItem('dontShowUpdates', 'true');
+    } else {
+        localStorage.removeItem('dontShowUpdates');
+    }
+}
+
+// 手动显示功能更新弹窗的函数（调试用）
+function showUpdateModalForce() {
+    localStorage.removeItem('lastShownUpdateVersion');
+    localStorage.removeItem('dontShowUpdates');
+    showUpdateModal();
 } 
