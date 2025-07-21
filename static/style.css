@@ -476,12 +476,65 @@ body.forest-theme .room-card:hover {
 
 .user-status {
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
 }
 
 .status-indicator {
     display: block;
     font-size: 0.8rem;
     opacity: 0.8;
+}
+
+/* 通知开关样式 */
+.notification-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--current-card);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.notification-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.notification-toggle.enabled {
+    background: var(--current-accent);
+    color: white;
+    border-color: transparent;
+}
+
+.notification-toggle.enabled .notification-icon {
+    animation: bellShake 0.6s ease-in-out;
+}
+
+.notification-icon {
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.notification-status {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+@keyframes bellShake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
 }
 
 .status-connected {
@@ -736,6 +789,12 @@ body.forest-theme .room-card:hover {
     
     .user-status {
         text-align: center;
+        align-items: center;
+    }
+    
+    .notification-toggle {
+        font-size: 0.8rem;
+        padding: 4px 10px;
     }
 }
 

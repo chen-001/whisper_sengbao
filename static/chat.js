@@ -13,6 +13,8 @@ class ChatClient {
         this.hasMoreMessages = true;
         this.loadingMore = false;
         this.earliestTimestamp = null;
+        this.notificationsEnabled = false;
+        this.isPageVisible = true;
         
         this.init();
     }
@@ -35,9 +37,17 @@ class ChatClient {
         this.messageContextMenu = document.getElementById('messageContextMenu');
         this.loadMoreContainer = document.getElementById('loadMoreContainer');
         this.loadMoreBtn = document.getElementById('loadMoreBtn');
+        this.notificationToggle = document.getElementById('notificationToggle');
+        this.notificationStatus = document.getElementById('notificationStatus');
         
         // 绑定事件
         this.bindEvents();
+        
+        // 初始化通知设置
+        this.initNotifications();
+        
+        // 监听页面可见性变化
+        this.initPageVisibility();
         
         // 尝试从localStorage获取用户名
         const savedUsername = localStorage.getItem('chatUsername');
@@ -99,6 +109,13 @@ class ChatClient {
         if (this.loadMoreBtn) {
             this.loadMoreBtn.addEventListener('click', () => {
                 this.loadMoreMessages();
+            });
+        }
+
+        // 通知开关事件
+        if (this.notificationToggle) {
+            this.notificationToggle.addEventListener('click', () => {
+                this.toggleNotifications();
             });
         }
 
@@ -182,6 +199,10 @@ class ChatClient {
         switch (data.type) {
             case 'message':
                 this.displayMessage(data);
+                // 如果不是自己发送的消息且页面不在前台，发送通知
+                if (data.username !== this.username && this.notificationsEnabled && !this.isPageVisible) {
+                    this.showNotification(data.username, data.message);
+                }
                 break;
             case 'system':
                 this.displaySystemMessage(data.message);
@@ -635,6 +656,100 @@ class ChatClient {
             loadMoreLoading.style.display = 'none';
             this.loadMoreBtn.disabled = false;
         }
+    }
+
+    // 初始化通知设置
+    initNotifications() {
+        // 从本地存储加载通知设置
+        const savedSetting = localStorage.getItem('chatNotificationsEnabled');
+        this.notificationsEnabled = savedSetting === 'true';
+        this.updateNotificationUI();
+    }
+
+    // 初始化页面可见性监听
+    initPageVisibility() {
+        // 监听页面可见性变化
+        document.addEventListener('visibilitychange', () => {
+            this.isPageVisible = !document.hidden;
+        });
+
+        // 监听窗口焦点变化
+        window.addEventListener('focus', () => {
+            this.isPageVisible = true;
+        });
+
+        window.addEventListener('blur', () => {
+            this.isPageVisible = false;
+        });
+    }
+
+    // 切换通知状态
+    async toggleNotifications() {
+        if (!this.notificationsEnabled) {
+            // 请求通知权限
+            if (Notification.permission === 'default') {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    alert('需要开启通知权限才能使用消息通知功能');
+                    return;
+                }
+            } else if (Notification.permission === 'denied') {
+                alert('通知权限已被禁止，请在浏览器设置中开启通知权限');
+                return;
+            }
+            
+            this.notificationsEnabled = true;
+        } else {
+            this.notificationsEnabled = false;
+        }
+
+        // 保存设置到本地存储
+        localStorage.setItem('chatNotificationsEnabled', this.notificationsEnabled.toString());
+        
+        // 更新UI
+        this.updateNotificationUI();
+    }
+
+    // 更新通知开关UI
+    updateNotificationUI() {
+        if (!this.notificationToggle || !this.notificationStatus) return;
+
+        if (this.notificationsEnabled) {
+            this.notificationToggle.classList.add('enabled');
+            this.notificationStatus.textContent = '开启';
+        } else {
+            this.notificationToggle.classList.remove('enabled');
+            this.notificationStatus.textContent = '关闭';
+        }
+    }
+
+    // 显示浏览器通知
+    showNotification(username, message) {
+        if (Notification.permission !== 'granted' || !this.notificationsEnabled) {
+            return;
+        }
+
+        // 限制消息长度
+        const truncatedMessage = message.length > 50 ? message.substring(0, 47) + '...' : message;
+        
+        const notification = new Notification(`${username} 在 ${this.roomName}`, {
+            body: truncatedMessage,
+            icon: '/static/favicon.ico', // 如果有图标的话
+            tag: 'chat-message', // 相同tag的通知会相互替换
+            badge: '💬',
+            silent: false
+        });
+
+        // 点击通知时聚焦到窗口
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+
+        // 3秒后自动关闭通知
+        setTimeout(() => {
+            notification.close();
+        }, 3000);
     }
 }
 

@@ -229,4 +229,18 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8666, reload=True) 
+    import os
+    
+    if os.path.exists("ssl/cert.pem") and os.path.exists("ssl/key.pem"):
+        print("🔒 HTTPS模式启动...")
+        print("访问: https://localhost:8666")
+        uvicorn.run("main:app", 
+                   host="0.0.0.0", 
+                   port=8666, 
+                   reload=True,
+                   ssl_keyfile="ssl/key.pem",
+                   ssl_certfile="ssl/cert.pem")
+    else:
+        print("📡 HTTP模式启动...")
+        print("访问: http://localhost:8666") 
+        uvicorn.run("main:app", host="0.0.0.0", port=8666, reload=True)
