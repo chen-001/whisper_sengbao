@@ -58,6 +58,9 @@
                             <button class="btn btn-secondary" onclick="joinRoom('{{ room.name }}', {{ room.has_password | tojson }})">
                                 加入聊天室
                             </button>
+                            <button class="btn btn-tertiary" onclick="openPasswordSettings('{{ room.name }}', {{ room.has_password | tojson }})" title="设置密码">
+                                ⚙️
+                            </button>
                         </div>
                     </div>
                     {% endfor %}
@@ -127,6 +130,33 @@
                     不再显示此更新
                 </label>
             </div>
+        </div>
+    </div>
+
+    <!-- 设置聊天室密码模态框 -->
+    <div id="passwordSettingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePasswordSettingsModal()">&times;</span>
+            <h2 id="passwordModalTitle">设置聊天室密码</h2>
+            <form id="passwordSettingsForm">
+                <div class="form-group">
+                    <label for="currentPassword" id="currentPasswordLabel" style="display: none;">当前密码：</label>
+                    <input type="password" id="currentPassword" name="currentPassword" placeholder="请输入当前密码以验证身份" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">新密码：</label>
+                    <input type="password" id="newPassword" name="newPassword" placeholder="输入新密码（留空表示取消密码保护）">
+                    <small class="form-help">留空表示取消密码保护，任何人都可以进入</small>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">确认新密码：</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="再次输入新密码确认">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">保存设置</button>
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordSettingsModal()">取消</button>
+                </div>
+            </form>
         </div>
     </div>
 

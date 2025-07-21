@@ -472,6 +472,24 @@ body.forest-theme .btn-primary:hover {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
+.btn-tertiary {
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.3);
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 40px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(5px);
+}
+
+.btn-tertiary:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
 /* 聊天室列表 */
 .room-list-section h2 {
     color: var(--text-secondary);
@@ -536,7 +554,10 @@ body.forest-theme .room-card:hover {
 }
 
 .room-actions {
-    text-align: right;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 /* 模态框样式 */

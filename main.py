@@ -141,6 +141,18 @@ async def verify_room_password(room_name: str = Form(...), password: str = Form(
     else:
         return {"status": "error", "message": "密码错误或聊天室不存在"}
 
+@app.post("/set-room-password")
+async def set_room_password(room_name: str = Form(...), new_password: str = Form("")):
+    """设置或更新聊天室密码"""
+    success = db.update_room_password(room_name, new_password)
+    if success:
+        if new_password:
+            return {"status": "success", "message": "聊天室密码设置成功"}
+        else:
+            return {"status": "success", "message": "聊天室密码保护已取消"}
+    else:
+        return {"status": "error", "message": "聊天室不存在或设置失败"}
+
 @app.get("/api/messages/{room_name}")
 async def get_more_messages(room_name: str, before: str = None, limit: int = 50):
     """获取更多历史消息（分页API）"""

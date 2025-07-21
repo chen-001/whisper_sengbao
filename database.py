@@ -112,6 +112,28 @@ class ChatDatabase:
         
         return stored_password == password  # 密码匹配
     
+    def update_room_password(self, room_name: str, new_password: str = "") -> bool:
+        """更新聊天室密码"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # 检查聊天室是否存在
+            cursor.execute('SELECT name FROM rooms WHERE name = ?', (room_name,))
+            if not cursor.fetchone():
+                conn.close()
+                return False
+            
+            # 更新密码（空字符串表示取消密码保护）
+            cursor.execute('UPDATE rooms SET password = ? WHERE name = ?', 
+                         (new_password if new_password else None, room_name))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"更新聊天室密码错误: {e}")
+            return False
+    
     def save_message(self, room_name: str, username: str, message: str) -> None:
         """保存消息到数据库"""
         conn = sqlite3.connect(self.db_path)

@@ -2,6 +2,8 @@
 
 let selectedRoom = null;
 let selectedRoomHasPassword = false;
+let currentSettingRoom = null;
+let currentSettingRoomHasPassword = false;
 
 // DOM加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
@@ -28,6 +30,18 @@ document.addEventListener('DOMContentLoaded', function() {
             closeUpdateModal();
         }
     });
+
+    // 密码设置模态框关闭处理
+    const passwordModal = document.getElementById('passwordSettingsModal');
+    passwordModal.addEventListener('click', function(e) {
+        if (e.target === passwordModal) {
+            closePasswordSettingsModal();
+        }
+    });
+
+    // 密码设置表单处理
+    const passwordForm = document.getElementById('passwordSettingsForm');
+    passwordForm.addEventListener('submit', handlePasswordSettings);
 
     // 主题切换处理
     const themeToggle = document.getElementById('themeToggle');
@@ -184,6 +198,7 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
         closeUpdateModal();
+        closePasswordSettingsModal();
     }
 });
 
@@ -264,4 +279,119 @@ function showUpdateModalForce() {
     localStorage.removeItem('lastShownUpdateVersion');
     localStorage.removeItem('dontShowUpdates');
     showUpdateModal();
+}
+
+// 密码设置相关函数
+function openPasswordSettings(roomName, hasPassword) {
+    currentSettingRoom = roomName;
+    currentSettingRoomHasPassword = hasPassword;
+    
+    const modal = document.getElementById('passwordSettingsModal');
+    const modalTitle = document.getElementById('passwordModalTitle');
+    const currentPasswordGroup = document.getElementById('currentPassword');
+    const currentPasswordLabel = document.getElementById('currentPasswordLabel');
+    
+    // 根据是否已有密码调整界面
+    if (hasPassword) {
+        modalTitle.textContent = '修改聊天室密码';
+        currentPasswordGroup.style.display = 'block';
+        currentPasswordLabel.style.display = 'block';
+        currentPasswordGroup.setAttribute('required', 'required');
+    } else {
+        modalTitle.textContent = '设置聊天室密码';
+        currentPasswordGroup.style.display = 'none';
+        currentPasswordLabel.style.display = 'none';
+        currentPasswordGroup.removeAttribute('required');
+    }
+    
+    modal.classList.add('modal-open');
+    
+    // 聚焦到合适的输入框
+    setTimeout(() => {
+        if (hasPassword) {
+            document.getElementById('currentPassword').focus();
+        } else {
+            document.getElementById('newPassword').focus();
+        }
+    }, 100);
+}
+
+function closePasswordSettingsModal() {
+    const modal = document.getElementById('passwordSettingsModal');
+    modal.classList.remove('modal-open');
+    currentSettingRoom = null;
+    currentSettingRoomHasPassword = false;
+    
+    // 清空表单
+    document.getElementById('passwordSettingsForm').reset();
+}
+
+async function handlePasswordSettings(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    
+    // 验证表单
+    if (currentSettingRoomHasPassword && !currentPassword) {
+        alert('请输入当前密码');
+        return;
+    }
+    
+    if (newPassword && newPassword !== confirmPassword) {
+        alert('新密码和确认密码不一致');
+        return;
+    }
+    
+    // 如果房间已有密码，先验证当前密码
+    if (currentSettingRoomHasPassword) {
+        try {
+            const verifyFormData = new FormData();
+            verifyFormData.append('room_name', currentSettingRoom);
+            verifyFormData.append('password', currentPassword);
+            
+            const verifyResponse = await fetch('/verify-room-password', {
+                method: 'POST',
+                body: verifyFormData
+            });
+            
+            const verifyResult = await verifyResponse.json();
+            
+            if (verifyResult.status !== 'success') {
+                alert('当前密码错误');
+                return;
+            }
+        } catch (error) {
+            console.error('验证当前密码错误:', error);
+            alert('验证密码失败，请重试');
+            return;
+        }
+    }
+    
+    // 设置新密码
+    try {
+        const formData = new FormData();
+        formData.append('room_name', currentSettingRoom);
+        formData.append('new_password', newPassword);
+        
+        const response = await fetch('/set-room-password', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            alert(result.message);
+            closePasswordSettingsModal();
+            // 刷新页面以显示更新后的状态
+            window.location.reload();
+        } else {
+            alert(result.message || '设置密码失败');
+        }
+    } catch (error) {
+        console.error('设置密码错误:', error);
+        alert('设置密码失败，请重试');
+    }
 } 
