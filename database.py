@@ -30,6 +30,16 @@ class ChatDatabase:
             cursor.execute('ALTER TABLE rooms ADD COLUMN password TEXT')
             print("数据库迁移：已添加password列")
         
+        # 检查是否需要添加图片消息支持字段（数据库迁移）
+        cursor.execute("PRAGMA table_info(messages)")
+        message_columns = [column[1] for column in cursor.fetchall()]
+        if 'message_type' not in message_columns:
+            cursor.execute('ALTER TABLE messages ADD COLUMN message_type TEXT DEFAULT "text"')
+            print("数据库迁移：已添加message_type列")
+        if 'file_path' not in message_columns:
+            cursor.execute('ALTER TABLE messages ADD COLUMN file_path TEXT')
+            print("数据库迁移：已添加file_path列")
+        
         # 创建消息表
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS messages (
@@ -134,15 +144,15 @@ class ChatDatabase:
             print(f"更新聊天室密码错误: {e}")
             return False
     
-    def save_message(self, room_name: str, username: str, message: str) -> None:
+    def save_message(self, room_name: str, username: str, message: str, message_type: str = "text", file_path: str = None) -> None:
         """保存消息到数据库"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO messages (room_name, username, message, timestamp) 
-            VALUES (?, ?, ?, ?)
-        ''', (room_name, username, message, datetime.now().isoformat()))
+            INSERT INTO messages (room_name, username, message, message_type, file_path, timestamp) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (room_name, username, message, message_type, file_path, datetime.now().isoformat()))
         
         conn.commit()
         conn.close()
@@ -161,7 +171,7 @@ class ChatDatabase:
         if before_timestamp:
             # 分页查询：获取指定时间之前的消息
             cursor.execute('''
-                SELECT id, username, message, timestamp 
+                SELECT id, username, message, timestamp, message_type, file_path 
                 FROM messages 
                 WHERE room_name = ? AND timestamp < ?
                 ORDER BY timestamp DESC 
@@ -170,7 +180,7 @@ class ChatDatabase:
         else:
             # 初始查询：获取最新的消息
             cursor.execute('''
-                SELECT id, username, message, timestamp 
+                SELECT id, username, message, timestamp, message_type, file_path 
                 FROM messages 
                 WHERE room_name = ? 
                 ORDER BY timestamp DESC 
@@ -183,7 +193,9 @@ class ChatDatabase:
                 'id': row[0],
                 'username': row[1],
                 'message': row[2],
-                'timestamp': row[3]
+                'timestamp': row[3],
+                'message_type': row[4] or 'text',  # 默认为text类型
+                'file_path': row[5]
             })
         
         # 按时间正序返回（最早的在前面）

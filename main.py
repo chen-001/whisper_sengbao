@@ -1,9 +1,12 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form, UploadFile, File, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 import json
 import asyncio
+import os
+import uuid
+from datetime import datetime
 from typing import Dict, List, Set
 from database import ChatDatabase
 
@@ -15,6 +18,37 @@ templates = Jinja2Templates(directory="templates")
 
 # 数据库实例
 db = ChatDatabase()
+
+# 图片上传配置
+UPLOAD_DIR = "static/uploads"
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+# 确保上传目录存在
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def get_file_extension(filename: str) -> str:
+    """获取文件扩展名"""
+    return os.path.splitext(filename.lower())[1]
+
+def generate_filename(original_filename: str) -> str:
+    """生成唯一的文件名"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_id = str(uuid.uuid4())[:8]
+    extension = get_file_extension(original_filename)
+    return f"{timestamp}_{unique_id}_{original_filename}"
+
+def validate_image_file(file: UploadFile) -> bool:
+    """验证图片文件"""
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        return False
+    
+    extension = get_file_extension(file.filename)
+    if extension not in ALLOWED_EXTENSIONS:
+        return False
+        
+    return True
 
 # 存储活跃的WebSocket连接
 class ConnectionManager:
@@ -153,6 +187,59 @@ async def set_room_password(room_name: str = Form(...), new_password: str = Form
     else:
         return {"status": "error", "message": "聊天室不存在或设置失败"}
 
+@app.post("/upload-image")
+async def upload_image(
+    file: UploadFile = File(...),
+    room_name: str = Form(...),
+    username: str = Form(...)
+):
+    """上传图片文件"""
+    try:
+        # 验证文件大小
+        if file.size and file.size > MAX_FILE_SIZE:
+            raise HTTPException(status_code=400, detail="文件大小超过20MB限制")
+        
+        # 验证文件类型
+        if not validate_image_file(file):
+            raise HTTPException(status_code=400, detail="不支持的文件类型，只支持JPG、PNG、GIF、WEBP格式")
+        
+        # 生成文件名并保存
+        filename = generate_filename(file.filename)
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        
+        # 保存文件
+        contents = await file.read()
+        
+        # 再次检查文件大小
+        if len(contents) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=400, detail="文件大小超过20MB限制")
+        
+        with open(file_path, "wb") as f:
+            f.write(contents)
+        
+        # 保存图片消息到数据库
+        relative_path = f"/static/uploads/{filename}"
+        db.save_message(
+            room_name=room_name,
+            username=username,
+            message=file.filename,  # 原始文件名作为消息内容
+            message_type="image",
+            file_path=relative_path
+        )
+        
+        return {
+            "status": "success",
+            "message": "图片上传成功",
+            "file_path": relative_path,
+            "filename": file.filename
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"图片上传错误: {e}")
+        raise HTTPException(status_code=500, detail="图片上传失败")
+
 @app.get("/api/messages/{room_name}")
 async def get_more_messages(room_name: str, before: str = None, limit: int = 50):
     """获取更多历史消息（分页API）"""
@@ -211,27 +298,51 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
             message_data = json.loads(data)
             
             if message_data.get("type") == "message":
-                message = message_data.get("message", "").strip()
-                quoted_message = message_data.get("quotedMessage")
+                message_type = message_data.get("message_type", "text")
                 
-                if message:
-                    # 保存消息到数据库
-                    db.save_message(room_name, username, message)
+                if message_type == "text":
+                    # 处理文本消息
+                    message = message_data.get("message", "").strip()
+                    quoted_message = message_data.get("quotedMessage")
                     
-                    # 构建广播消息
-                    broadcast_data = {
-                        "type": "message",
-                        "username": username,
-                        "message": message,
-                        "timestamp": message_data.get("timestamp")
-                    }
+                    if message:
+                        # 保存消息到数据库
+                        db.save_message(room_name, username, message, "text")
+                        
+                        # 构建广播消息
+                        broadcast_data = {
+                            "type": "message",
+                            "message_type": "text",
+                            "username": username,
+                            "message": message,
+                            "timestamp": message_data.get("timestamp")
+                        }
+                        
+                        # 如果有引用消息，添加到广播数据中
+                        if quoted_message:
+                            broadcast_data["quotedMessage"] = quoted_message
+                        
+                        # 广播消息到房间内所有用户
+                        await manager.broadcast_to_room(room_name, broadcast_data)
+                
+                elif message_type == "image":
+                    # 处理图片消息广播（图片已经在上传API中保存到数据库）
+                    file_path = message_data.get("file_path")
+                    filename = message_data.get("filename")
                     
-                    # 如果有引用消息，添加到广播数据中
-                    if quoted_message:
-                        broadcast_data["quotedMessage"] = quoted_message
-                    
-                    # 广播消息到房间内所有用户
-                    await manager.broadcast_to_room(room_name, broadcast_data)
+                    if file_path and filename:
+                        # 构建广播消息
+                        broadcast_data = {
+                            "type": "message",
+                            "message_type": "image",
+                            "username": username,
+                            "message": filename,
+                            "file_path": file_path,
+                            "timestamp": message_data.get("timestamp")
+                        }
+                        
+                        # 广播图片消息到房间内所有用户
+                        await manager.broadcast_to_room(room_name, broadcast_data)
     
     except WebSocketDisconnect:
         if 'user_id' in locals() and user_id:

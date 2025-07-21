@@ -42,6 +42,13 @@ class ChatClient {
         this.emojiButton = document.getElementById('emojiButton');
         this.emojiPicker = document.getElementById('emojiPicker');
         this.emojiGrid = document.getElementById('emojiGrid');
+        this.imageButton = document.getElementById('imageButton');
+        this.imageInput = document.getElementById('imageInput');
+        this.uploadProgressContainer = document.getElementById('uploadProgressContainer');
+        this.uploadPreview = document.getElementById('uploadPreview');
+        this.uploadFilename = document.getElementById('uploadFilename');
+        this.progressFill = document.getElementById('progressFill');
+        this.progressText = document.getElementById('progressText');
         
         // 绑定事件
         this.bindEvents();
@@ -140,6 +147,23 @@ class ChatClient {
             }
         });
 
+        // 图片上传事件
+        if (this.imageButton && this.imageInput) {
+            this.imageButton.addEventListener('click', () => {
+                this.imageInput.click();
+            });
+
+            this.imageInput.addEventListener('change', (e) => {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    // 目前只支持单文件上传
+                    this.uploadImage(files[0]);
+                }
+                // 清空输入，允许重复选择同一文件
+                e.target.value = '';
+            });
+        }
+
         // 加载保存的主题
         this.loadTheme();
     }
@@ -181,6 +205,7 @@ class ChatClient {
                 this.messageInput.disabled = false;
                 this.sendButton.disabled = false;
                 this.emojiButton.disabled = false;
+                this.imageButton.disabled = false;
                 this.messageInput.focus();
             };
             
@@ -329,11 +354,23 @@ class ChatClient {
             `;
         }
         
-        messageContent += `
-            ${!isOwnMessage ? `<div class="message-username">${this.escapeHtml(data.username)}</div>` : ''}
-            <div class="message-text">${this.escapeHtml(data.message)}</div>
-            ${timeString ? `<div class="message-time">${timeString}</div>` : ''}
-        `;
+        // 根据消息类型构建内容
+        if (data.message_type === 'image') {
+            // 图片消息
+            messageContent += `
+                ${!isOwnMessage ? `<div class="message-username">${this.escapeHtml(data.username)}</div>` : ''}
+                <img src="${data.file_path}" alt="${this.escapeHtml(data.message)}" class="message-image" loading="lazy">
+                <div class="message-image-filename">${this.escapeHtml(data.message)}</div>
+                ${timeString ? `<div class="message-time">${timeString}</div>` : ''}
+            `;
+        } else {
+            // 文本消息
+            messageContent += `
+                ${!isOwnMessage ? `<div class="message-username">${this.escapeHtml(data.username)}</div>` : ''}
+                <div class="message-text">${this.escapeHtml(data.message)}</div>
+                ${timeString ? `<div class="message-time">${timeString}</div>` : ''}
+            `;
+        }
         
         messageEl.innerHTML = messageContent;
         
@@ -420,9 +457,18 @@ class ChatClient {
         }
     }
 
-    // 绑定消息事件（长按）
+    // 绑定消息事件（长按和图片点击）
     bindMessageEvents(messageEl) {
         let startX, startY;
+        
+        // 图片点击事件
+        const imageEl = messageEl.querySelector('.message-image');
+        if (imageEl) {
+            imageEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openImageViewer(imageEl.src, imageEl.alt);
+            });
+        }
         
         // 移动端长按
         messageEl.addEventListener('touchstart', (e) => {
@@ -870,6 +916,140 @@ class ChatClient {
         
         // 隐藏表情选择器
         this.hideEmojiPicker();
+    }
+
+    // 图片上传相关方法
+    async uploadImage(file) {
+        // 验证文件大小 (20MB)
+        const maxSize = 20 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('图片大小超过20MB限制！');
+            return;
+        }
+
+        // 验证文件类型
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('不支持的文件格式！请选择JPG、PNG、GIF或WEBP格式的图片。');
+            return;
+        }
+
+        // 显示上传预览
+        this.showUploadPreview(file);
+
+        try {
+            // 创建FormData
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('room_name', this.roomName);
+            formData.append('username', this.username);
+
+            // 使用XMLHttpRequest实现上传进度显示
+            const xhr = new XMLHttpRequest();
+            
+            // 上传进度事件
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    this.updateUploadProgress(percentComplete);
+                }
+            });
+
+            // 上传完成事件
+            xhr.addEventListener('load', () => {
+                this.hideUploadProgress();
+                
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        // 通过WebSocket通知其他用户
+                        this.ws.send(JSON.stringify({
+                            type: 'message',
+                            message_type: 'image',
+                            file_path: response.file_path,
+                            filename: response.filename,
+                            timestamp: new Date().toISOString()
+                        }));
+                    } else {
+                        alert('上传失败：' + response.message);
+                    }
+                } else {
+                    const error = JSON.parse(xhr.responseText);
+                    alert('上传失败：' + (error.detail || '服务器错误'));
+                }
+            });
+
+            // 上传错误事件
+            xhr.addEventListener('error', () => {
+                this.hideUploadProgress();
+                alert('上传失败：网络错误');
+            });
+
+            // 发送请求
+            xhr.open('POST', '/upload-image');
+            xhr.send(formData);
+
+        } catch (error) {
+            this.hideUploadProgress();
+            console.error('上传图片错误:', error);
+            alert('上传失败：' + error.message);
+        }
+    }
+
+    showUploadPreview(file) {
+        // 显示预览图片
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.uploadPreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        // 显示文件名
+        this.uploadFilename.textContent = file.name;
+        
+        // 重置进度
+        this.updateUploadProgress(0);
+        
+        // 显示上传容器
+        this.uploadProgressContainer.style.display = 'block';
+    }
+
+    updateUploadProgress(percent) {
+        this.progressFill.style.width = percent + '%';
+        this.progressText.textContent = percent + '%';
+    }
+
+    hideUploadProgress() {
+        this.uploadProgressContainer.style.display = 'none';
+    }
+
+    // 图片查看器
+    openImageViewer(imageSrc, imageAlt) {
+        // 创建图片查看器模态框
+        const viewer = document.createElement('div');
+        viewer.className = 'image-viewer-modal';
+        viewer.innerHTML = `
+            <div class="image-viewer-backdrop" onclick="this.parentElement.remove()">
+                <div class="image-viewer-content" onclick="event.stopPropagation()">
+                    <img src="${imageSrc}" alt="${imageAlt}" class="viewer-image">
+                    <div class="image-viewer-controls">
+                        <span class="image-viewer-filename">${imageAlt}</span>
+                        <button class="image-viewer-close" onclick="this.closest('.image-viewer-modal').remove()">×</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(viewer);
+
+        // ESC键关闭
+        const handleEscKey = (e) => {
+            if (e.key === 'Escape') {
+                viewer.remove();
+                document.removeEventListener('keydown', handleEscKey);
+            }
+        };
+        document.addEventListener('keydown', handleEscKey);
     }
 }
 

@@ -65,9 +65,29 @@
                         <div class="input-group">
                             <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off" disabled>
                             <button type="button" id="emojiButton" class="emoji-button" title="选择表情" disabled>😀</button>
+                            <button type="button" id="imageButton" class="image-button" title="发送图片" disabled>📎</button>
+                            <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="display: none;" multiple>
                         </div>
                         <button type="submit" id="sendButton" disabled>发送</button>
                     </form>
+                    
+                    <!-- 图片上传进度区域 -->
+                    <div class="upload-progress-container" id="uploadProgressContainer" style="display: none;">
+                        <div class="upload-item" id="uploadItem">
+                            <div class="upload-preview">
+                                <img id="uploadPreview" alt="预览">
+                                <div class="upload-info">
+                                    <div class="upload-filename" id="uploadFilename"></div>
+                                    <div class="upload-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="progressFill"></div>
+                                        </div>
+                                        <span class="progress-text" id="progressText">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- 表情选择器面板 -->
                     <div class="emoji-picker" id="emojiPicker">
