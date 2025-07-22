@@ -75,6 +75,9 @@ class ChatClient {
         // 初始化表情搜索
         this.initEmojiSearch();
         
+        // 初始化搜索功能
+        this.initSearch();
+        
         // 尝试从localStorage获取用户名
         const savedUsername = localStorage.getItem('chatUsername');
         if (savedUsername) {
@@ -1437,6 +1440,323 @@ class ChatClient {
                 btn.classList.add('active');
             }
         });
+    }
+
+    // 搜索功能初始化
+    initSearch() {
+        this.searchModal = document.getElementById('searchModal');
+        this.searchModalOverlay = document.getElementById('searchModalOverlay');
+        this.searchBtn = document.getElementById('searchBtn');
+        this.closeSearchBtn = document.getElementById('closeSearchBtn');
+        this.searchInput = document.getElementById('searchInput');
+        this.searchExecuteBtn = document.getElementById('searchExecuteBtn');
+        this.searchResults = document.getElementById('searchResults');
+        this.searchResultsCount = document.getElementById('searchResultsCount');
+        this.searchPagination = document.getElementById('searchPagination');
+        this.searchPrevBtn = document.getElementById('searchPrevBtn');
+        this.searchNextBtn = document.getElementById('searchNextBtn');
+        this.searchPageInfo = document.getElementById('searchPageInfo');
+        
+        // 搜索状态
+        this.currentSearchKeyword = '';
+        this.currentSearchPage = 1;
+        this.totalSearchPages = 0;
+        this.isSearching = false;
+        
+        // 绑定搜索事件
+        if (this.searchBtn) {
+            this.searchBtn.addEventListener('click', () => this.openSearchModal());
+        }
+        
+        if (this.closeSearchBtn) {
+            this.closeSearchBtn.addEventListener('click', () => this.closeSearchModal());
+        }
+        
+        if (this.searchModalOverlay) {
+            this.searchModalOverlay.addEventListener('click', () => this.closeSearchModal());
+        }
+        
+        if (this.searchExecuteBtn) {
+            this.searchExecuteBtn.addEventListener('click', () => this.performSearch());
+        }
+        
+        if (this.searchInput) {
+            // 回车键搜索
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.performSearch();
+                }
+            });
+        }
+        
+        // 分页按钮事件
+        if (this.searchPrevBtn) {
+            this.searchPrevBtn.addEventListener('click', () => this.searchPrevPage());
+        }
+        
+        if (this.searchNextBtn) {
+            this.searchNextBtn.addEventListener('click', () => this.searchNextPage());
+        }
+        
+        // ESC键关闭弹窗
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.searchModal && this.searchModal.style.display === 'block') {
+                this.closeSearchModal();
+            }
+        });
+    }
+    
+    // 打开搜索弹窗
+    openSearchModal() {
+        if (this.searchModal) {
+            this.searchModal.style.display = 'block';
+            // 添加动画效果
+            setTimeout(() => {
+                if (this.searchInput) {
+                    this.searchInput.focus();
+                }
+            }, 100);
+        }
+    }
+    
+    // 关闭搜索弹窗
+    closeSearchModal() {
+        if (this.searchModal) {
+            this.searchModal.style.display = 'none';
+            this.clearSearchResults();
+        }
+    }
+    
+    // 执行搜索
+    async performSearch(page = 1) {
+        if (this.isSearching) return;
+        
+        const keyword = this.searchInput?.value?.trim();
+        if (!keyword) {
+            alert('请输入搜索关键词');
+            return;
+        }
+        
+        // 获取搜索选项
+        const searchUsername = document.getElementById('searchUsername')?.checked ?? true;
+        const searchMessage = document.getElementById('searchMessage')?.checked ?? true;
+        
+        if (!searchUsername && !searchMessage) {
+            alert('请至少选择一个搜索范围');
+            return;
+        }
+        
+        this.isSearching = true;
+        this.currentSearchKeyword = keyword;
+        this.currentSearchPage = page;
+        
+        // 更新搜索按钮状态
+        this.setSearchButtonLoading(true);
+        
+        try {
+            const params = new URLSearchParams({
+                keyword: keyword,
+                search_username: searchUsername,
+                search_message: searchMessage,
+                page: page,
+                limit: 20
+            });
+            
+            const response = await fetch(`/api/search/${encodeURIComponent(this.roomName)}?${params}`);
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                this.displaySearchResults(data);
+                this.updateSearchPagination(data);
+            } else {
+                alert(data.message || '搜索失败');
+                this.clearSearchResults();
+            }
+        } catch (error) {
+            console.error('搜索错误:', error);
+            alert('搜索失败，请重试');
+            this.clearSearchResults();
+        } finally {
+            this.isSearching = false;
+            this.setSearchButtonLoading(false);
+        }
+    }
+    
+    // 显示搜索结果
+    displaySearchResults(data) {
+        if (!this.searchResults || !this.searchResultsCount) return;
+        
+        const { messages, total_count, keyword } = data;
+        
+        // 更新结果计数
+        this.searchResultsCount.textContent = `找到 ${total_count} 条包含 "${keyword}" 的消息`;
+        
+        // 清空之前的结果
+        this.searchResults.innerHTML = '';
+        
+        if (messages.length === 0) {
+            this.searchResults.innerHTML = '<div class="search-no-results">未找到匹配的消息</div>';
+            return;
+        }
+        
+        // 显示搜索结果
+        messages.forEach(messageData => {
+            const resultItem = this.createSearchResultItem(messageData, keyword);
+            this.searchResults.appendChild(resultItem);
+        });
+    }
+    
+    // 创建搜索结果项
+    createSearchResultItem(messageData, keyword) {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'search-result-item';
+        
+        // 格式化时间
+        const timestamp = new Date(messageData.timestamp);
+        const timeStr = timestamp.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        // 高亮关键词
+        const highlightText = (text, keyword) => {
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        };
+        
+        let contentHtml = '';
+        
+        if (messageData.message_type === 'image') {
+            contentHtml = `
+                <div class="search-result-content">
+                    <div class="search-result-image">
+                        <img src="${messageData.file_path}" alt="图片消息" loading="lazy">
+                    </div>
+                    <span class="search-result-filename">${highlightText(messageData.message || '图片', keyword)}</span>
+                </div>
+            `;
+        } else {
+            contentHtml = `
+                <div class="search-result-content">
+                    <span class="search-result-text">${highlightText(messageData.message, keyword)}</span>
+                </div>
+            `;
+        }
+        
+        resultItem.innerHTML = `
+            <div class="search-result-header">
+                <span class="search-result-username">${highlightText(messageData.username, keyword)}</span>
+                <span class="search-result-time">${timeStr}</span>
+            </div>
+            ${contentHtml}
+        `;
+        
+        // 点击结果项可以跳转到对应消息（如果已加载）
+        resultItem.addEventListener('click', () => {
+            this.jumpToMessage(messageData.id);
+        });
+        
+        return resultItem;
+    }
+    
+    // 跳转到指定消息
+    jumpToMessage(messageId) {
+        // 尝试在当前页面中找到对应消息
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            // 关闭搜索弹窗
+            this.closeSearchModal();
+            
+            // 滚动到对应消息并高亮
+            messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            messageElement.classList.add('highlight-message');
+            
+            // 3秒后移除高亮
+            setTimeout(() => {
+                messageElement.classList.remove('highlight-message');
+            }, 3000);
+        } else {
+            // 消息未在当前页面中，提示用户
+            alert('该消息不在当前页面中，您可以尝试加载更多历史消息后再次搜索');
+        }
+    }
+    
+    // 更新搜索分页
+    updateSearchPagination(data) {
+        if (!this.searchPagination) return;
+        
+        const { current_page, total_pages, has_more } = data;
+        this.totalSearchPages = total_pages;
+        
+        if (total_pages <= 1) {
+            this.searchPagination.style.display = 'none';
+            return;
+        }
+        
+        this.searchPagination.style.display = 'flex';
+        
+        // 更新按钮状态
+        if (this.searchPrevBtn) {
+            this.searchPrevBtn.disabled = current_page <= 1;
+        }
+        
+        if (this.searchNextBtn) {
+            this.searchNextBtn.disabled = current_page >= total_pages;
+        }
+        
+        // 更新页面信息
+        if (this.searchPageInfo) {
+            this.searchPageInfo.textContent = `第 ${current_page} 页，共 ${total_pages} 页`;
+        }
+    }
+    
+    // 上一页
+    searchPrevPage() {
+        if (this.currentSearchPage > 1) {
+            this.performSearch(this.currentSearchPage - 1);
+        }
+    }
+    
+    // 下一页
+    searchNextPage() {
+        if (this.currentSearchPage < this.totalSearchPages) {
+            this.performSearch(this.currentSearchPage + 1);
+        }
+    }
+    
+    // 清空搜索结果
+    clearSearchResults() {
+        if (this.searchResults) {
+            this.searchResults.innerHTML = '';
+        }
+        if (this.searchResultsCount) {
+            this.searchResultsCount.textContent = '搜索结果将显示在这里';
+        }
+        if (this.searchPagination) {
+            this.searchPagination.style.display = 'none';
+        }
+        this.currentSearchKeyword = '';
+        this.currentSearchPage = 1;
+        this.totalSearchPages = 0;
+    }
+    
+    // 设置搜索按钮加载状态
+    setSearchButtonLoading(loading) {
+        if (!this.searchExecuteBtn) return;
+        
+        if (loading) {
+            this.searchExecuteBtn.textContent = '搜索中...';
+            this.searchExecuteBtn.disabled = true;
+        } else {
+            this.searchExecuteBtn.textContent = '搜索';
+            this.searchExecuteBtn.disabled = false;
+        }
     }
 
     // 自定义表情相关方法

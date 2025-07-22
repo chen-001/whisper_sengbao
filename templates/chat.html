@@ -172,7 +172,56 @@
                 <ul id="usersList" class="users-list">
                     <!-- 在线用户列表会在这里显示 -->
                 </ul>
+                
+                <!-- 搜索功能 -->
+                <div class="sidebar-section">
+                    <h3>搜索聊天记录</h3>
+                    <button class="sidebar-search-btn" id="searchBtn" title="搜索聊天记录">
+                        <span class="search-icon">🔍</span>
+                        <span>搜索消息</span>
+                    </button>
+                </div>
             </aside>
+        </div>
+    </div>
+
+    <!-- 搜索弹窗 -->
+    <div class="search-modal" id="searchModal">
+        <div class="search-modal-overlay" id="searchModalOverlay"></div>
+        <div class="search-modal-content">
+            <div class="search-modal-header">
+                <h3>搜索聊天记录</h3>
+                <button class="close-search-btn" id="closeSearchBtn">×</button>
+            </div>
+            <div class="search-modal-body">
+                <div class="search-input-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="输入关键词搜索聊天记录..." maxlength="100">
+                    <button type="button" id="searchExecuteBtn" class="search-execute-btn">搜索</button>
+                </div>
+                <div class="search-options">
+                    <label class="search-option">
+                        <input type="checkbox" id="searchUsername" checked>
+                        <span>搜索用户名</span>
+                    </label>
+                    <label class="search-option">
+                        <input type="checkbox" id="searchMessage" checked>
+                        <span>搜索消息内容</span>
+                    </label>
+                </div>
+                <div class="search-results-container">
+                    <div class="search-results-header">
+                        <span class="search-results-count" id="searchResultsCount">搜索结果将显示在这里</span>
+                    </div>
+                    <div class="search-results" id="searchResults">
+                        <!-- 搜索结果会在这里显示 -->
+                    </div>
+                </div>
+            </div>
+            <div class="search-modal-footer" id="searchPagination" style="display: none;">
+                <button class="search-prev-btn" id="searchPrevBtn" disabled>上一页</button>
+                <span class="search-page-info" id="searchPageInfo">第 1 页</span>
+                <button class="search-next-btn" id="searchNextBtn" disabled>下一页</button>
+            </div>
         </div>
     </div>
 

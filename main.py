@@ -347,6 +347,53 @@ async def get_more_messages(room_name: str, before: str = None, limit: int = 50)
         print(f"获取消息错误: {e}")
         return {"status": "error", "message": "获取消息失败"}
 
+@app.get("/api/search/{room_name}")
+async def search_messages(
+    room_name: str, 
+    keyword: str, 
+    search_username: bool = True, 
+    search_message: bool = True,
+    page: int = 1,
+    limit: int = 20
+):
+    """搜索指定聊天室的消息"""
+    try:
+        if not keyword or not keyword.strip():
+            return {
+                "status": "error", 
+                "message": "搜索关键词不能为空"
+            }
+        
+        # 计算偏移量
+        offset = (page - 1) * limit
+        
+        # 执行搜索
+        search_result = db.search_messages(
+            room_name=room_name,
+            keyword=keyword.strip(),
+            search_username=search_username,
+            search_message=search_message,
+            limit=limit,
+            offset=offset
+        )
+        
+        total_count = search_result["total_count"]
+        messages = search_result["messages"]
+        total_pages = (total_count + limit - 1) // limit  # 向上取整
+        
+        return {
+            "status": "success",
+            "messages": messages,
+            "total_count": total_count,
+            "current_page": page,
+            "total_pages": total_pages,
+            "has_more": page < total_pages,
+            "keyword": keyword.strip()
+        }
+    except Exception as e:
+        print(f"搜索消息错误: {e}")
+        return {"status": "error", "message": "搜索失败，请重试"}
+
 @app.websocket("/ws/{room_name}")
 async def websocket_endpoint(websocket: WebSocket, room_name: str):
     """WebSocket连接端点"""

@@ -308,4 +308,87 @@ class ChatDatabase:
         count = cursor.fetchone()[0]
         
         conn.close()
-        return count 
+        return count
+
+    def search_messages(self, room_name: str, keyword: str, search_username: bool = True, 
+                       search_message: bool = True, limit: int = 20, offset: int = 0) -> Dict:
+        """在指定聊天室中搜索消息
+        
+        Args:
+            room_name: 聊天室名称
+            keyword: 搜索关键词
+            search_username: 是否搜索用户名
+            search_message: 是否搜索消息内容
+            limit: 返回结果数量限制
+            offset: 偏移量（用于分页）
+        
+        Returns:
+            包含搜索结果和总数的字典
+        """
+        if not keyword.strip():
+            return {"messages": [], "total_count": 0}
+        
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # 构建搜索条件
+        search_conditions = []
+        search_params = [room_name]
+        
+        if search_username and search_message:
+            search_conditions.append("(username LIKE ? OR message LIKE ?)")
+            search_params.extend([f"%{keyword}%", f"%{keyword}%"])
+        elif search_username:
+            search_conditions.append("username LIKE ?")
+            search_params.append(f"%{keyword}%")
+        elif search_message:
+            search_conditions.append("message LIKE ?")
+            search_params.append(f"%{keyword}%")
+        else:
+            # 如果两个都不选择，默认搜索消息内容
+            search_conditions.append("message LIKE ?")
+            search_params.append(f"%{keyword}%")
+        
+        where_clause = "WHERE room_name = ? AND " + " AND ".join(search_conditions)
+        
+        # 获取搜索结果总数
+        count_query = f"SELECT COUNT(*) FROM messages {where_clause}"
+        cursor.execute(count_query, search_params)
+        total_count = cursor.fetchone()[0]
+        
+        # 获取搜索结果（按时间倒序，最新的在前）
+        search_query = f'''
+            SELECT id, username, message, timestamp, message_type, file_path, quoted_message 
+            FROM messages 
+            {where_clause}
+            ORDER BY timestamp DESC 
+            LIMIT ? OFFSET ?
+        '''
+        search_params.extend([limit, offset])
+        cursor.execute(search_query, search_params)
+        
+        messages = []
+        for row in cursor.fetchall():
+            message_data = {
+                'id': row[0],
+                'username': row[1],
+                'message': row[2],
+                'timestamp': row[3],
+                'message_type': row[4] or 'text',
+                'file_path': row[5]
+            }
+            
+            # 解析引用消息JSON
+            if row[6]:
+                try:
+                    message_data['quotedMessage'] = json.loads(row[6])
+                except json.JSONDecodeError:
+                    pass
+            
+            messages.append(message_data)
+        
+        conn.close()
+        return {
+            "messages": messages,
+            "total_count": total_count
+        } 
