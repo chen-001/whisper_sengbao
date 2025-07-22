@@ -130,6 +130,7 @@ async function handleJoinRoom(e) {
     
     const username = document.getElementById('username').value.trim();
     const roomPassword = document.getElementById('roomPassword').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
     
     if (!username) {
         alert('请输入您的昵称');
@@ -145,6 +146,12 @@ async function handleJoinRoom(e) {
         alert('请选择一个聊天室');
         return;
     }
+    
+    // 显示加载状态
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading-spinner"></span> 正在进入...';
+    submitBtn.classList.add('loading');
     
     // 如果聊天室有密码，先验证密码
     if (selectedRoomHasPassword) {
@@ -172,15 +179,27 @@ async function handleJoinRoom(e) {
         } catch (error) {
             console.error('验证密码错误:', error);
             alert('密码验证失败，请重试');
+            // 恢复按钮状态
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            submitBtn.classList.remove('loading');
             return;
         }
     }
     
-    // 将用户名保存到localStorage
-    localStorage.setItem('chatUsername', username);
-    
-    // 跳转到聊天室页面
-    window.location.href = `/chat/${encodeURIComponent(selectedRoom)}`;
+    try {
+        // 将用户名保存到localStorage
+        localStorage.setItem('chatUsername', username);
+        
+        // 跳转到聊天室页面
+        window.location.href = `/chat/${encodeURIComponent(selectedRoom)}`;
+    } catch (error) {
+        // 如果跳转失败，恢复按钮状态
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        submitBtn.classList.remove('loading');
+        alert('进入聊天室失败，请重试');
+    }
 }
 
 // 关闭模态框

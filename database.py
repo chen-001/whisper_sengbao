@@ -43,6 +43,17 @@ class ChatDatabase:
             cursor.execute('ALTER TABLE messages ADD COLUMN quoted_message TEXT')
             print("数据库迁移：已添加quoted_message列")
         
+        # 创建自定义表情表
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS custom_emojis (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                file_path TEXT NOT NULL,
+                uploader TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
         # 创建消息表
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS messages (
@@ -145,6 +156,73 @@ class ChatDatabase:
             return True
         except Exception as e:
             print(f"更新聊天室密码错误: {e}")
+            return False
+    
+    def save_custom_emoji(self, name: str, file_path: str, uploader: str) -> bool:
+        """保存自定义表情"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO custom_emojis (name, file_path, uploader) 
+                VALUES (?, ?, ?)
+            ''', (name, file_path, uploader))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.IntegrityError:
+            print(f"表情名称 '{name}' 已存在")
+            return False
+        except Exception as e:
+            print(f"保存自定义表情错误: {e}")
+            return False
+    
+    def get_custom_emojis(self) -> List[Dict]:
+        """获取所有自定义表情"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT id, name, file_path, uploader, created_at 
+            FROM custom_emojis 
+            ORDER BY created_at DESC
+        ''')
+        
+        emojis = []
+        for row in cursor.fetchall():
+            emojis.append({
+                'id': row[0],
+                'name': row[1],
+                'file_path': row[2],
+                'uploader': row[3],
+                'created_at': row[4]
+            })
+        
+        conn.close()
+        return emojis
+    
+    def delete_custom_emoji(self, emoji_id: int, uploader: str) -> bool:
+        """删除自定义表情（只有上传者可以删除）"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # 检查是否为上传者
+            cursor.execute('SELECT uploader FROM custom_emojis WHERE id = ?', (emoji_id,))
+            result = cursor.fetchone()
+            
+            if not result or result[0] != uploader:
+                conn.close()
+                return False
+            
+            cursor.execute('DELETE FROM custom_emojis WHERE id = ?', (emoji_id,))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"删除自定义表情错误: {e}")
             return False
     
     def save_message(self, room_name: str, username: str, message: str, message_type: str = "text", file_path: str = None, quoted_message: dict = None) -> None:

@@ -6,7 +6,9 @@ import json
 import asyncio
 import os
 import uuid
+import time
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Set
 from database import ChatDatabase
 
@@ -187,6 +189,93 @@ async def set_room_password(room_name: str = Form(...), new_password: str = Form
     else:
         return {"status": "error", "message": "聊天室不存在或设置失败"}
 
+@app.post("/upload-custom-emoji")
+async def upload_custom_emoji(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    uploader: str = Form(...)
+):
+    """上传自定义表情"""
+    try:
+        # 验证文件类型
+        if not file.content_type.startswith('image/'):
+            return {"status": "error", "message": "只支持图片文件"}
+        
+        # 验证文件大小 (5MB限制)
+        MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+        file_content = await file.read()
+        if len(file_content) > MAX_FILE_SIZE:
+            return {"status": "error", "message": "图片大小不能超过5MB"}
+        
+        # 验证表情名称
+        if not name or len(name) > 20:
+            return {"status": "error", "message": "表情名称长度应在1-20个字符之间"}
+        
+        # 生成文件名
+        file_extension = file.filename.split('.')[-1].lower()
+        if file_extension not in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+            return {"status": "error", "message": "不支持的文件格式"}
+        
+        # 创建自定义表情目录
+        emoji_dir = Path("static/custom_emojis")
+        emoji_dir.mkdir(exist_ok=True)
+        
+        # 生成唯一文件名
+        timestamp = int(time.time())
+        safe_name = "".join(c for c in name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        filename = f"{timestamp}_{safe_name}.{file_extension}"
+        file_path = emoji_dir / filename
+        
+        # 保存文件
+        with open(file_path, "wb") as f:
+            f.write(file_content)
+        
+        # 保存到数据库
+        relative_path = f"/static/custom_emojis/{filename}"
+        success = db.save_custom_emoji(name, relative_path, uploader)
+        
+        if not success:
+            # 如果数据库保存失败，删除文件
+            file_path.unlink(missing_ok=True)
+            return {"status": "error", "message": "表情名称已存在"}
+        
+        return {
+            "status": "success", 
+            "message": "自定义表情上传成功",
+            "emoji": {
+                "name": name,
+                "file_path": relative_path,
+                "uploader": uploader
+            }
+        }
+        
+    except Exception as e:
+        print(f"上传自定义表情错误: {e}")
+        return {"status": "error", "message": "上传失败，请重试"}
+
+@app.get("/api/custom-emojis")
+async def get_custom_emojis():
+    """获取所有自定义表情"""
+    try:
+        emojis = db.get_custom_emojis()
+        return {"status": "success", "emojis": emojis}
+    except Exception as e:
+        print(f"获取自定义表情错误: {e}")
+        return {"status": "error", "message": "获取表情失败"}
+
+@app.delete("/api/custom-emoji/{emoji_id}")
+async def delete_custom_emoji(emoji_id: int, uploader: str = Form(...)):
+    """删除自定义表情"""
+    try:
+        success = db.delete_custom_emoji(emoji_id, uploader)
+        if success:
+            return {"status": "success", "message": "表情删除成功"}
+        else:
+            return {"status": "error", "message": "只能删除自己上传的表情"}
+    except Exception as e:
+        print(f"删除自定义表情错误: {e}")
+        return {"status": "error", "message": "删除失败"}
+
 @app.post("/upload-image")
 async def upload_image(
     file: UploadFile = File(...),
@@ -326,20 +415,28 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
                         await manager.broadcast_to_room(room_name, broadcast_data)
                 
                 elif message_type == "image":
-                    # 处理图片消息广播（图片已经在上传API中保存到数据库）
+                    # 处理图片消息广播（包括自定义表情）
                     file_path = message_data.get("file_path")
-                    filename = message_data.get("filename")
+                    message_content = message_data.get("message", "")
+                    quoted_message = message_data.get("quotedMessage")
                     
-                    if file_path and filename:
+                    if file_path:
+                        # 保存图片消息到数据库（包含自定义表情）
+                        db.save_message(room_name, username, message_content, "image", file_path, quoted_message)
+                        
                         # 构建广播消息
                         broadcast_data = {
                             "type": "message",
                             "message_type": "image",
                             "username": username,
-                            "message": filename,
+                            "message": message_content,
                             "file_path": file_path,
                             "timestamp": message_data.get("timestamp")
                         }
+                        
+                        # 如果有引用消息，添加到广播数据中
+                        if quoted_message:
+                            broadcast_data["quotedMessage"] = quoted_message
                         
                         # 广播图片消息到房间内所有用户
                         await manager.broadcast_to_room(room_name, broadcast_data)

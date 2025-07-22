@@ -41,6 +41,10 @@ class ChatClient {
         this.emojiButton = document.getElementById('emojiButton');
         this.emojiPicker = document.getElementById('emojiPicker');
         this.emojiGrid = document.getElementById('emojiGrid');
+        this.customEmojiButton = document.getElementById('customEmojiButton');
+        this.customEmojiPicker = document.getElementById('customEmojiPicker');
+        this.customEmojiGrid = document.getElementById('customEmojiGrid');
+        this.customEmojiInput = document.getElementById('customEmojiInput');
         this.imageButton = document.getElementById('imageButton');
         this.imageInput = document.getElementById('imageInput');
         this.uploadProgressContainer = document.getElementById('uploadProgressContainer');
@@ -64,6 +68,9 @@ class ChatClient {
         
         // 初始化表情选择器
         this.initEmojiPicker();
+        
+        // 初始化自定义表情
+        this.initCustomEmojis();
         
         // 尝试从localStorage获取用户名
         const savedUsername = localStorage.getItem('chatUsername');
@@ -165,6 +172,44 @@ class ChatClient {
             });
         }
 
+        // 自定义表情事件
+        if (this.customEmojiButton) {
+            this.customEmojiButton.addEventListener('click', () => {
+                this.toggleCustomEmojiPicker();
+            });
+        }
+
+        // 绑定自定义表情上传按钮
+        const uploadEmojiBtn = document.getElementById('uploadEmojiBtn');
+        if (uploadEmojiBtn) {
+            uploadEmojiBtn.addEventListener('click', () => {
+                openCustomEmojiUploadModal();
+            });
+        }
+
+        // 绑定表情上传区域点击事件
+        const emojiUploadArea = document.getElementById('emojiUploadArea');
+        const customEmojiInput = document.getElementById('customEmojiInput');
+        if (emojiUploadArea && customEmojiInput) {
+            emojiUploadArea.addEventListener('click', () => {
+                customEmojiInput.click();
+            });
+
+            customEmojiInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleCustomEmojiFileSelect(e.target.files[0]);
+                }
+            });
+        }
+
+        // 绑定保存表情按钮
+        const saveEmojiBtn = document.getElementById('saveEmojiBtn');
+        if (saveEmojiBtn) {
+            saveEmojiBtn.addEventListener('click', () => {
+                uploadCustomEmoji();
+            });
+        }
+
         // 加载保存的主题
         this.loadTheme();
     }
@@ -206,6 +251,7 @@ class ChatClient {
                 this.messageInput.disabled = false;
                 this.sendButton.disabled = false;
                 this.emojiButton.disabled = false;
+                this.customEmojiButton.disabled = false;
                 this.imageButton.disabled = false;
                 this.messageInput.focus();
             };
@@ -1150,6 +1196,221 @@ class ChatClient {
         }
     }
 
+    // 自定义表情相关方法
+    async initCustomEmojis() {
+        await this.loadCustomEmojis();
+    }
+
+    async loadCustomEmojis() {
+        try {
+            const response = await fetch('/api/custom-emojis');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                this.renderCustomEmojis(data.emojis);
+            }
+        } catch (error) {
+            console.error('加载自定义表情失败:', error);
+        }
+    }
+
+    renderCustomEmojis(emojis) {
+        if (!this.customEmojiGrid) return;
+        
+        this.customEmojiGrid.innerHTML = '';
+        const emptyMessage = document.getElementById('customEmojiEmpty');
+        
+        if (emojis.length === 0) {
+            emptyMessage.style.display = 'block';
+            return;
+        }
+        
+        emptyMessage.style.display = 'none';
+        
+        emojis.forEach(emoji => {
+            const emojiElement = document.createElement('div');
+            emojiElement.className = 'custom-emoji-item';
+            emojiElement.innerHTML = `
+                <img src="${emoji.file_path}" alt="${emoji.name}" title="${emoji.name}">
+                <span class="emoji-name">${emoji.name}</span>
+                ${emoji.uploader === this.username ? '<button class="delete-emoji-btn" onclick="window.chatClient.deleteCustomEmoji(' + emoji.id + ')">×</button>' : ''}
+            `;
+            
+            // 点击发送表情
+            emojiElement.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('delete-emoji-btn')) {
+                    this.sendCustomEmoji(emoji);
+                }
+            });
+            
+            this.customEmojiGrid.appendChild(emojiElement);
+        });
+    }
+
+    toggleCustomEmojiPicker() {
+        if (this.customEmojiPicker.classList.contains('show')) {
+            this.hideCustomEmojiPicker();
+        } else {
+            this.showCustomEmojiPicker();
+        }
+    }
+
+    showCustomEmojiPicker() {
+        this.hideEmojiPicker(); // 隐藏普通表情选择器
+        this.customEmojiPicker.classList.add('show');
+        this.loadCustomEmojis(); // 刷新表情列表
+    }
+
+    hideCustomEmojiPicker() {
+        this.customEmojiPicker.classList.remove('show');
+    }
+
+    sendCustomEmoji(emoji) {
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            console.error('WebSocket连接未就绪');
+            return;
+        }
+        
+        // 发送自定义表情作为图片消息
+        const messageData = {
+            type: 'message',
+            message_type: 'image',
+            message: emoji.name,
+            file_path: emoji.file_path,
+            timestamp: new Date().toISOString()
+        };
+        
+        // 如果有引用消息，添加引用信息
+        if (this.quotedMessage) {
+            messageData.quotedMessage = this.quotedMessage;
+        }
+        
+        console.log('发送自定义表情:', messageData);
+        this.ws.send(JSON.stringify(messageData));
+        this.clearQuote();
+        this.hideCustomEmojiPicker();
+    }
+
+    async deleteCustomEmoji(emojiId) {
+        if (!confirm('确定要删除这个自定义表情吗？')) return;
+        
+        try {
+            const formData = new FormData();
+            formData.append('uploader', this.username);
+            
+            const response = await fetch(`/api/custom-emoji/${emojiId}`, {
+                method: 'DELETE',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                this.loadCustomEmojis(); // 刷新列表
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('删除自定义表情失败:', error);
+            alert('删除失败，请重试');
+        }
+    }
+
+}
+
+// 自定义表情上传相关的全局函数
+function openCustomEmojiUploadModal() {
+    document.getElementById('customEmojiUploadModal').classList.add('show');
+}
+
+function closeCustomEmojiUploadModal() {
+    document.getElementById('customEmojiUploadModal').classList.remove('show');
+    document.getElementById('emojiUploadArea').style.display = 'block';
+    document.getElementById('emojiPreview').style.display = 'none';
+    document.getElementById('emojiName').value = '';
+    document.getElementById('saveEmojiBtn').disabled = true;
+}
+
+function handleCustomEmojiFileSelect(file) {
+    if (!file) return;
+    
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+    }
+    
+    // 验证文件大小 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('图片大小不能超过5MB');
+        return;
+    }
+    
+    // 预览图片
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('emojiUploadArea').style.display = 'none';
+        document.getElementById('emojiPreview').style.display = 'block';
+        document.getElementById('emojiPreviewImg').src = e.target.result;
+        
+        // 生成默认名称
+        const defaultName = file.name.split('.')[0];
+        document.getElementById('emojiName').value = defaultName;
+        document.getElementById('emojiName').focus();
+        document.getElementById('saveEmojiBtn').disabled = false;
+        
+        // 存储文件用于上传
+        window.selectedEmojiFile = file;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function uploadCustomEmoji() {
+    const name = document.getElementById('emojiName').value.trim();
+    const file = window.selectedEmojiFile;
+    
+    if (!name) {
+        alert('请输入表情名称');
+        return;
+    }
+    
+    if (!file) {
+        alert('请选择图片文件');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('saveEmojiBtn');
+    const originalText = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = '上传中...';
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', name);
+        formData.append('uploader', window.chatClient.username);
+        
+        const response = await fetch('/upload-custom-emoji', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            closeCustomEmojiUploadModal();
+            window.chatClient.loadCustomEmojis(); // 刷新表情列表
+            alert('自定义表情上传成功！');
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('上传失败:', error);
+        alert('上传失败，请重试');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+    }
 }
 
 // 页面加载完成后初始化聊天客户端

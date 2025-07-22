@@ -64,9 +64,11 @@
                     <form id="messageForm" class="message-form">
                         <div class="input-group">
                             <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off" disabled>
+                            <button type="button" id="customEmojiButton" class="custom-emoji-button" title="自定义表情" disabled>🎭</button>
                             <button type="button" id="emojiButton" class="emoji-button" title="选择表情" disabled>😀</button>
                             <button type="button" id="imageButton" class="image-button" title="发送图片" disabled>📎</button>
                             <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="display: none;" multiple>
+                            <input type="file" id="customEmojiInput" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="display: none;">
                         </div>
                         <button type="submit" id="sendButton" disabled>发送</button>
                     </form>
@@ -106,6 +108,53 @@
                         <div class="emoji-picker-content">
                             <div class="emoji-grid" id="emojiGrid">
                                 <!-- 表情列表会通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 自定义表情选择器面板 -->
+                    <div class="custom-emoji-picker" id="customEmojiPicker">
+                        <div class="custom-emoji-header">
+                            <h3>自定义表情</h3>
+                            <button class="upload-emoji-btn" id="uploadEmojiBtn">
+                                <span>📤</span> 上传表情
+                            </button>
+                        </div>
+                        <div class="custom-emoji-content">
+                            <div class="custom-emoji-grid" id="customEmojiGrid">
+                                <!-- 自定义表情会通过JavaScript动态加载 -->
+                            </div>
+                            <div class="custom-emoji-empty" id="customEmojiEmpty" style="display: none;">
+                                <p>还没有自定义表情</p>
+                                <p>点击上方按钮上传第一个表情吧！</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 上传自定义表情弹窗 -->
+                    <div class="custom-emoji-upload-modal" id="customEmojiUploadModal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3>上传自定义表情</h3>
+                                <button class="close-btn" onclick="closeCustomEmojiUploadModal()">×</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="upload-area" id="emojiUploadArea">
+                                    <div class="upload-icon">🎭</div>
+                                    <p>点击选择或拖拽图片</p>
+                                    <small>支持 JPG、PNG、GIF、WEBP 格式，建议尺寸 64x64px</small>
+                                </div>
+                                <div class="emoji-preview" id="emojiPreview" style="display: none;">
+                                    <img id="emojiPreviewImg" alt="预览">
+                                    <div class="emoji-info">
+                                        <label for="emojiName">表情名称：</label>
+                                        <input type="text" id="emojiName" placeholder="输入表情名称（如：开心、哭泣）" maxlength="20">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" onclick="closeCustomEmojiUploadModal()">取消</button>
+                                <button class="btn btn-primary" id="saveEmojiBtn" disabled>保存表情</button>
                             </div>
                         </div>
                     </div>
