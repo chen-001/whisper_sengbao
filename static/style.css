@@ -1050,8 +1050,10 @@ body.forest-theme .room-card:hover {
 
 /* 图片消息样式 */
 .message-image {
-    max-width: 300px;
+    max-width: 100%; /* 相对于消息容器的100%宽度 */
     max-height: 300px;
+    width: auto; /* 保持宽高比 */
+    height: auto; /* 保持宽高比 */
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -1536,6 +1538,15 @@ body.forest-theme .room-card:hover {
         font-size: 1rem;
         padding: 6px 8px;
     }
+    
+    /* 移动端图片消息优化 */
+    .message {
+        max-width: 90%; /* 移动端消息框更宽一些 */
+    }
+    
+    .message-image {
+        max-height: 200px; /* 移动端降低图片最大高度 */
+    }
 }
 
 /* 消息上下文菜单样式 */
@@ -1819,6 +1830,8 @@ body.forest-theme .quoted-username {
 .quoted-image {
     max-width: 120px;
     max-height: 80px;
+    width: auto; /* 保持宽高比 */
+    height: auto; /* 保持宽高比 */
     border-radius: 6px;
     display: block;
 }
@@ -3336,8 +3349,10 @@ body.multi-select-mode .message {
 }
 
 .forward-message-image {
-    max-width: 200px;
+    max-width: 100%; /* 相对于容器的100%宽度 */
     max-height: 150px;
+    width: auto; /* 保持宽高比 */
+    height: auto; /* 保持宽高比 */
     border-radius: 8px;
     margin-top: 8px;
     cursor: pointer;
@@ -3432,7 +3447,7 @@ body.forest-theme .forward-group-preview:hover {
     }
     
     .forward-message-image {
-        max-width: 150px;
-        max-height: 120px;
+        max-width: 100%; /* 相对于容器的100%宽度 */
+        max-height: 120px; /* 移动端降低高度 */
     }
 }
