@@ -85,10 +85,15 @@ body.forest-theme::before {
 
 /* 统一功能菜单样式 */
 .function-menu {
-    position: fixed;
-    top: 20px;
-    right: 80px;
+    position: relative;
     z-index: 1000;
+}
+
+/* 头部右侧区域布局 */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .menu-trigger {
@@ -917,6 +922,9 @@ body.forest-theme .room-card:hover {
 
 .user-status {
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 .status-indicator {
@@ -1485,6 +1493,12 @@ body.forest-theme .room-card:hover {
         flex-direction: column;
         gap: 10px;
         text-align: center;
+    }
+    
+    .header-right {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
     }
     
     .user-status {

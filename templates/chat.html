@@ -7,52 +7,6 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- 统一功能菜单 -->
-    <div class="function-menu" id="functionMenu">
-        <button class="menu-trigger" id="menuTrigger" title="功能菜单">
-            <span class="menu-icon">⚙️</span>
-        </button>
-        
-        <div class="menu-dropdown" id="menuDropdown">
-            <div class="menu-item" id="themeToggleItem">
-                <span class="menu-item-icon">🌸</span>
-                <span class="menu-item-text">切换主题</span>
-                <span class="menu-item-value" id="themeValue">森林</span>
-            </div>
-            
-            <div class="menu-item" id="notificationToggleItem" title="切换消息通知">
-                <span class="menu-item-icon">🔔</span>
-                <span class="menu-item-text">消息通知</span>
-                <span class="menu-item-value" id="notificationValue">关闭</span>
-            </div>
-            
-            <div class="menu-divider"></div>
-            
-            <div class="menu-item" id="userListToggle">
-                <span class="menu-item-icon">👥</span>
-                <span class="menu-item-text">在线用户</span>
-                <span class="menu-item-arrow">▼</span>
-            </div>
-            
-            <div class="menu-item" id="searchToggleItem">
-                <span class="menu-item-icon">🔍</span>
-                <span class="menu-item-text">搜索记录</span>
-            </div>
-            
-            <div class="menu-divider"></div>
-            
-            <div class="menu-item" id="multiSelectToggleItem">
-                <span class="menu-item-icon">☑️</span>
-                <span class="menu-item-text" id="multiSelectMenuText">多选模式</span>
-            </div>
-            
-            <div class="menu-item" id="forwardToggleItem" style="display: none;">
-                <span class="menu-item-icon">📤</span>
-                <span class="menu-item-text">转发消息</span>
-                <span class="menu-item-badge" id="selectedCountMenu">0</span>
-            </div>
-        </div>
-    </div>
 
     <!-- 在线用户列表弹窗 -->
     <div class="users-modal" id="usersModal">
@@ -86,9 +40,57 @@
                 <h1>{{ room_name }}</h1>
                 <a href="/" class="back-btn">← 返回聊天室列表</a>
             </div>
-            <div class="user-status" id="userStatus">
-                <span id="username-display"></span>
-                <span class="status-indicator" id="connectionStatus">连接中...</span>
+            <div class="header-right">
+                <div class="user-status" id="userStatus">
+                    <span id="username-display"></span>
+                    <span class="status-indicator" id="connectionStatus">连接中...</span>
+                </div>
+                <!-- 统一功能菜单 -->
+                <div class="function-menu" id="functionMenu">
+                    <button class="menu-trigger" id="menuTrigger" title="功能菜单">
+                        <span class="menu-icon">⚙️</span>
+                    </button>
+                    
+                    <div class="menu-dropdown" id="menuDropdown">
+                        <div class="menu-item" id="themeToggleItem">
+                            <span class="menu-item-icon">🌸</span>
+                            <span class="menu-item-text">切换主题</span>
+                            <span class="menu-item-value" id="themeValue">森林</span>
+                        </div>
+                        
+                        <div class="menu-item" id="notificationToggleItem" title="切换消息通知">
+                            <span class="menu-item-icon">🔔</span>
+                            <span class="menu-item-text">消息通知</span>
+                            <span class="menu-item-value" id="notificationValue">关闭</span>
+                        </div>
+                        
+                        <div class="menu-divider"></div>
+                        
+                        <div class="menu-item" id="userListToggle">
+                            <span class="menu-item-icon">👥</span>
+                            <span class="menu-item-text">在线用户</span>
+                            <span class="menu-item-arrow">▼</span>
+                        </div>
+                        
+                        <div class="menu-item" id="searchToggleItem">
+                            <span class="menu-item-icon">🔍</span>
+                            <span class="menu-item-text">搜索记录</span>
+                        </div>
+                        
+                        <div class="menu-divider"></div>
+                        
+                        <div class="menu-item" id="multiSelectToggleItem">
+                            <span class="menu-item-icon">☑️</span>
+                            <span class="menu-item-text" id="multiSelectMenuText">多选模式</span>
+                        </div>
+                        
+                        <div class="menu-item" id="forwardToggleItem" style="display: none;">
+                            <span class="menu-item-icon">📤</span>
+                            <span class="menu-item-text">转发消息</span>
+                            <span class="menu-item-badge" id="selectedCountMenu">0</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
