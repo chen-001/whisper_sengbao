@@ -253,16 +253,16 @@ class ChatDatabase:
         cursor = conn.cursor()
         
         if before_timestamp:
-            # 分页查询：获取指定时间之前的消息
+            # 分页查询：获取指定时间之前的消息，按时间升序排列
             cursor.execute('''
                 SELECT id, username, message, timestamp, message_type, file_path, quoted_message 
                 FROM messages 
                 WHERE room_name = ? AND timestamp < ?
-                ORDER BY timestamp DESC 
+                ORDER BY timestamp ASC 
                 LIMIT ?
             ''', (room_name, before_timestamp, limit))
         else:
-            # 初始查询：获取最新的消息
+            # 初始查询：获取最新的消息，先按DESC获取最新的消息，然后在Python中排序
             cursor.execute('''
                 SELECT id, username, message, timestamp, message_type, file_path, quoted_message 
                 FROM messages 
@@ -291,8 +291,11 @@ class ChatDatabase:
             
             messages.append(message_data)
         
-        # 按时间正序返回（最早的在前面）
-        messages.reverse()
+        # 如果是初始查询，需要反转顺序使最早的消息在前面
+        # 如果是分页查询，数据库已经按ASC排序，无需反转
+        if not before_timestamp:
+            messages.reverse()
+        
         conn.close()
         return messages
     

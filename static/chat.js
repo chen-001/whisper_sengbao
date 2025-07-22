@@ -730,16 +730,20 @@ class ChatClient {
         const scrollHeight = scrollContainer.scrollHeight;
         const scrollTop = scrollContainer.scrollTop;
 
-        // 创建消息元素并插入到加载更多按钮之后
+        // 找到插入点：加载更多按钮之后的位置
+        let insertPoint = this.loadMoreContainer ? this.loadMoreContainer.nextSibling : null;
+        
+        // 创建消息元素，按顺序插入（最早的消息先插入）
         messages.forEach(messageData => {
             const messageEl = this.createMessageElement(messageData);
             
-            // 插入到加载更多按钮之后
-            if (this.loadMoreContainer && this.loadMoreContainer.nextSibling) {
-                this.messagesContainer.insertBefore(messageEl, this.loadMoreContainer.nextSibling);
+            // 按时间顺序插入：每个消息都插入到当前插入点位置
+            if (insertPoint) {
+                this.messagesContainer.insertBefore(messageEl, insertPoint);
             } else {
                 this.messagesContainer.appendChild(messageEl);
             }
+            // 注意：insertPoint保持不变，这样后面的消息会插入到前面消息的后面
         });
 
         // 保持滚动位置（避免跳动）
