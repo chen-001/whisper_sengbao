@@ -238,3 +238,4 @@ yarn-error.log*
 # SSL证书文件
 ssl/
 *.pem
+static/custom_emojis/*
