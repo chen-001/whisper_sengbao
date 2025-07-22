@@ -32,12 +32,29 @@ class ChatClient {
         this.usernameModal = document.getElementById('usernameModal');
         this.usernameForm = document.getElementById('usernameForm');
         this.messageForm = document.getElementById('messageForm');
-        this.themeToggle = document.getElementById('themeToggle');
         this.messageContextMenu = document.getElementById('messageContextMenu');
         this.loadMoreContainer = document.getElementById('loadMoreContainer');
         this.loadMoreBtn = document.getElementById('loadMoreBtn');
-        this.notificationToggle = document.getElementById('notificationToggle');
-        this.notificationStatus = document.getElementById('notificationStatus');
+        
+        // 新的菜单相关元素
+        this.menuTrigger = document.getElementById('menuTrigger');
+        this.menuDropdown = document.getElementById('menuDropdown');
+        this.themeToggleItem = document.getElementById('themeToggleItem');
+        this.themeValue = document.getElementById('themeValue');
+        this.notificationToggleItem = document.getElementById('notificationToggleItem');
+        this.notificationValue = document.getElementById('notificationValue');
+        this.userListToggle = document.getElementById('userListToggle');
+        this.searchToggleItem = document.getElementById('searchToggleItem');
+        this.multiSelectToggleItem = document.getElementById('multiSelectToggleItem');
+        this.multiSelectMenuText = document.getElementById('multiSelectMenuText');
+        this.forwardToggleItem = document.getElementById('forwardToggleItem');
+        this.selectedCountMenu = document.getElementById('selectedCountMenu');
+        
+        // 在线用户弹窗
+        this.usersModal = document.getElementById('usersModal');
+        this.usersModalOverlay = document.getElementById('usersModalOverlay');
+        this.closeUsersBtn = document.getElementById('closeUsersBtn');
+        this.usersModalList = document.getElementById('usersModalList');
         this.emojiButton = document.getElementById('emojiButton');
         this.emojiPicker = document.getElementById('emojiPicker');
         this.emojiGrid = document.getElementById('emojiGrid');
@@ -78,10 +95,274 @@ class ChatClient {
         // 初始化搜索功能
         this.initSearch();
         
-        // 尝试从localStorage获取用户名
+        // 初始化转发功能
+        this.initForward();
+        
+        // 初始化功能菜单
+        this.initFunctionMenu();
+        
+        // 检查是否需要设置用户名
+        this.checkUsernameRequirement();
+        
+        // 调试：检查关键元素是否正确加载
+        console.log('Debug - 关键元素检查:', {
+            messageInput: !!this.messageInput,
+            sendButton: !!this.sendButton,
+            menuTrigger: !!this.menuTrigger,
+            usernameModal: !!this.usernameModal
+        });
+        
+        // 临时启用按钮，防止WebSocket连接问题导致按钮无法使用
+        this.enableBasicButtons();
+    }
+    
+    // 启用基本按钮（紧急修复用）
+    enableBasicButtons() {
+        // 启用菜单按钮
+        if (this.menuTrigger) {
+            this.menuTrigger.disabled = false;
+        }
+        
+        // 启用表情按钮
+        if (this.emojiButton) {
+            this.emojiButton.disabled = false;
+        }
+        
+        if (this.customEmojiButton) {
+            this.customEmojiButton.disabled = false;
+        }
+        
+        if (this.imageButton) {
+            this.imageButton.disabled = false;
+        }
+        
+        // 如果有用户名，启用消息输入
         const savedUsername = localStorage.getItem('chatUsername');
-        if (savedUsername) {
+        if (savedUsername && this.messageInput && this.sendButton) {
+            this.messageInput.disabled = false;
+            this.sendButton.disabled = false;
+        }
+    }
+    
+    // 检查是否需要设置用户名
+    checkUsernameRequirement() {
+        // 检查URL参数中是否已经包含用户名
+        const urlParams = new URLSearchParams(window.location.search);
+        const usernameFromUrl = urlParams.get('username');
+        
+        // 检查localStorage中是否有保存的用户名
+        const savedUsername = localStorage.getItem('chatUsername');
+        
+        if (usernameFromUrl) {
+            // 如果URL中有用户名，直接使用
+            this.setUsername(usernameFromUrl);
+            // 清理URL中的username参数，保持URL整洁
+            this.cleanUrl();
+        } else if (savedUsername) {
+            // 如果localStorage中有用户名，使用保存的用户名
             this.setUsername(savedUsername);
+        } else {
+            // 如果都没有，显示用户名设置弹窗
+            this.showUsernameModal();
+        }
+    }
+    
+    // 显示用户名设置弹窗
+    showUsernameModal() {
+        if (this.usernameModal) {
+            this.usernameModal.classList.add('modal-open');
+        }
+    }
+    
+    // 隐藏用户名设置弹窗
+    hideUsernameModal() {
+        if (this.usernameModal) {
+            this.usernameModal.classList.remove('modal-open');
+        }
+    }
+    
+    // 清理URL参数
+    cleanUrl() {
+        const url = new URL(window.location);
+        url.searchParams.delete('username');
+        window.history.replaceState({}, document.title, url.toString());
+    }
+    
+    // 初始化功能菜单
+    initFunctionMenu() {
+        // 菜单触发器事件
+        if (this.menuTrigger && this.menuDropdown) {
+            this.menuTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleMenu();
+            });
+        }
+        
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.function-menu')) {
+                this.closeMenu();
+            }
+        });
+        
+        // 主题切换
+        if (this.themeToggleItem) {
+            this.themeToggleItem.addEventListener('click', () => {
+                this.toggleTheme();
+            });
+        }
+        
+        // 通知开关
+        if (this.notificationToggleItem) {
+            this.notificationToggleItem.addEventListener('click', () => {
+                this.toggleNotifications();
+            });
+        }
+        
+        // 在线用户
+        if (this.userListToggle) {
+            this.userListToggle.addEventListener('click', () => {
+                this.showUsersModal();
+                this.closeMenu();
+            });
+        }
+        
+        // 搜索
+        if (this.searchToggleItem) {
+            this.searchToggleItem.addEventListener('click', () => {
+                this.openSearchModal();
+                this.closeMenu();
+            });
+        }
+        
+        // 多选模式
+        if (this.multiSelectToggleItem) {
+            this.multiSelectToggleItem.addEventListener('click', () => {
+                this.toggleMultiSelectMode();
+                this.closeMenu();
+            });
+        }
+        
+        // 转发消息
+        if (this.forwardToggleItem) {
+            this.forwardToggleItem.addEventListener('click', () => {
+                this.openForwardModal();
+                this.closeMenu();
+            });
+        }
+        
+        // 在线用户弹窗事件
+        if (this.closeUsersBtn) {
+            this.closeUsersBtn.addEventListener('click', () => {
+                this.closeUsersModal();
+            });
+        }
+        
+        if (this.usersModalOverlay) {
+            this.usersModalOverlay.addEventListener('click', () => {
+                this.closeUsersModal();
+            });
+        }
+        
+        // 初始化主题和通知显示
+        this.initTheme();
+        this.updateNotificationDisplay();
+    }
+    
+    // 切换菜单显示
+    toggleMenu() {
+        if (this.menuDropdown) {
+            this.menuDropdown.classList.toggle('show');
+        }
+    }
+    
+    // 关闭菜单
+    closeMenu() {
+        if (this.menuDropdown) {
+            this.menuDropdown.classList.remove('show');
+        }
+    }
+    
+    // 显示在线用户弹窗
+    showUsersModal() {
+        if (this.usersModal && this.usersModalList) {
+            // 更新用户列表
+            const users = this.getCurrentUsers();
+            this.usersModalList.innerHTML = '';
+            users.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = user;
+                this.usersModalList.appendChild(li);
+            });
+            
+            this.usersModal.style.display = 'block';
+        }
+    }
+    
+    // 关闭在线用户弹窗
+    closeUsersModal() {
+        if (this.usersModal) {
+            this.usersModal.style.display = 'none';
+        }
+    }
+    
+    // 获取当前用户列表
+    getCurrentUsers() {
+        if (this.usersList) {
+            const userItems = this.usersList.querySelectorAll('li');
+            return Array.from(userItems).map(item => item.textContent);
+        }
+        return [];
+    }
+    
+    // 初始化主题
+    initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'forest') {
+            document.body.classList.add('forest-theme');
+        }
+        this.updateThemeDisplay();
+    }
+    
+    // 切换主题
+    toggleTheme() {
+        document.body.classList.toggle('forest-theme');
+        const isForest = document.body.classList.contains('forest-theme');
+        
+        // 保存主题设置
+        localStorage.setItem('theme', isForest ? 'forest' : 'dream');
+        
+        this.updateThemeDisplay();
+    }
+    
+    // 更新主题显示
+    updateThemeDisplay() {
+        const isForest = document.body.classList.contains('forest-theme');
+        if (this.themeValue) {
+            this.themeValue.textContent = isForest ? '梦幻' : '森林';
+        }
+    }
+    
+    // 更新通知状态显示
+    updateNotificationDisplay() {
+        if (this.notificationValue) {
+            this.notificationValue.textContent = this.notificationsEnabled ? '开启' : '关闭';
+        }
+    }
+    
+    // 更新多选模式显示
+    updateMultiSelectDisplay() {
+        if (this.multiSelectMenuText) {
+            this.multiSelectMenuText.textContent = this.isMultiSelectMode ? '退出多选' : '多选模式';
+        }
+        
+        if (this.selectedCountMenu) {
+            this.selectedCountMenu.textContent = this.selectedMessages ? this.selectedMessages.size : 0;
+        }
+        
+        if (this.forwardToggleItem) {
+            const hasSelected = this.selectedMessages && this.selectedMessages.size > 0;
+            this.forwardToggleItem.style.display = hasSelected ? 'flex' : 'none';
         }
     }
     
@@ -109,12 +390,7 @@ class ChatClient {
             }
         });
 
-        // 主题切换
-        if (this.themeToggle) {
-            this.themeToggle.addEventListener('click', () => {
-                this.toggleTheme();
-            });
-        }
+        // 主题切换功能已移至菜单中
 
         // 上下文菜单事件
         if (this.messageContextMenu) {
@@ -139,12 +415,7 @@ class ChatClient {
             });
         }
 
-        // 通知开关事件
-        if (this.notificationToggle) {
-            this.notificationToggle.addEventListener('click', () => {
-                this.toggleNotifications();
-            });
-        }
+        // 通知开关功能已移至菜单中
 
         // 表情按钮事件
         if (this.emojiButton) {
@@ -226,7 +497,7 @@ class ChatClient {
         localStorage.setItem('chatUsername', username);
         
         // 隐藏用户名模态框
-        this.usernameModal.classList.remove('modal-open');
+        this.hideUsernameModal();
         
         // 连接WebSocket
         this.connectWebSocket();
@@ -388,9 +659,18 @@ class ChatClient {
         const isOwnMessage = data.username === this.username;
         
         messageEl.className = `message ${isOwnMessage ? 'message-user' : 'message-other'}`;
-        messageEl.dataset.messageId = data.id || Date.now();
+        messageEl.dataset.messageId = data.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         messageEl.dataset.username = data.username;
         messageEl.dataset.messageText = data.message;
+        messageEl.dataset.messageType = data.message_type || 'text';
+        messageEl.dataset.filePath = data.file_path || '';
+        
+        // 添加多选复选框（默认隐藏）
+        const selectCheckbox = document.createElement('div');
+        selectCheckbox.className = 'message-select-checkbox';
+        selectCheckbox.innerHTML = '<input type="checkbox" class="message-checkbox">';
+        selectCheckbox.style.display = 'none';
+        messageEl.appendChild(selectCheckbox);
         
         const timeString = data.timestamp ? this.formatTime(data.timestamp) : '';
         
@@ -821,20 +1101,12 @@ class ChatClient {
         localStorage.setItem('chatNotificationsEnabled', this.notificationsEnabled.toString());
         
         // 更新UI
-        this.updateNotificationUI();
+        this.updateNotificationDisplay();
     }
 
-    // 更新通知开关UI
+    // 更新通知开关UI（保持向后兼容）
     updateNotificationUI() {
-        if (!this.notificationToggle || !this.notificationStatus) return;
-
-        if (this.notificationsEnabled) {
-            this.notificationToggle.classList.add('enabled');
-            this.notificationStatus.textContent = '开启';
-        } else {
-            this.notificationToggle.classList.remove('enabled');
-            this.notificationStatus.textContent = '关闭';
-        }
+        this.updateNotificationDisplay();
     }
 
     // 显示浏览器通知
@@ -1666,9 +1938,10 @@ class ChatClient {
     }
     
     // 跳转到指定消息
-    jumpToMessage(messageId) {
+    async jumpToMessage(messageId) {
         // 尝试在当前页面中找到对应消息
-        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        let messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        
         if (messageElement) {
             // 关闭搜索弹窗
             this.closeSearchModal();
@@ -1681,9 +1954,86 @@ class ChatClient {
             setTimeout(() => {
                 messageElement.classList.remove('highlight-message');
             }, 3000);
-        } else {
-            // 消息未在当前页面中，提示用户
-            alert('该消息不在当前页面中，您可以尝试加载更多历史消息后再次搜索');
+            return;
+        }
+        
+        // 消息未在当前页面中，尝试加载历史消息
+        if (!this.hasMoreMessages || this.loadingMore) {
+            alert('该消息不在当前页面中，且无法加载更多历史消息');
+            return;
+        }
+        
+        // 关闭搜索弹窗并显示加载提示
+        this.closeSearchModal();
+        
+        // 显示加载提示
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.className = 'jump-loading-indicator';
+        loadingIndicator.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 20px;
+                border-radius: 8px;
+                z-index: 10000;
+                text-align: center;
+            ">
+                <div style="margin-bottom: 10px;">正在加载消息...</div>
+                <div style="font-size: 12px;">正在寻找目标消息</div>
+            </div>
+        `;
+        document.body.appendChild(loadingIndicator);
+        
+        try {
+            let maxAttempts = 10; // 最多尝试加载10次
+            let attempts = 0;
+            
+            while (attempts < maxAttempts && this.hasMoreMessages) {
+                attempts++;
+                
+                // 加载更多消息
+                await this.loadMoreMessages();
+                
+                // 再次查找目标消息
+                messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    // 找到了，移除加载提示并跳转
+                    document.body.removeChild(loadingIndicator);
+                    
+                    // 滚动到对应消息并高亮
+                    messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    messageElement.classList.add('highlight-message');
+                    
+                    // 3秒后移除高亮
+                    setTimeout(() => {
+                        messageElement.classList.remove('highlight-message');
+                    }, 3000);
+                    return;
+                }
+                
+                // 更新加载提示
+                const indicator = loadingIndicator.querySelector('div div:last-child');
+                if (indicator) {
+                    indicator.textContent = `正在寻找目标消息 (${attempts}/${maxAttempts})`;
+                }
+                
+                // 短暂延迟避免请求过于频繁
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            // 未找到消息，移除加载提示并显示错误信息
+            document.body.removeChild(loadingIndicator);
+            alert('无法找到该消息，可能消息已被删除或位置太早');
+            
+        } catch (error) {
+            // 发生错误，移除加载提示并显示错误信息
+            document.body.removeChild(loadingIndicator);
+            console.error('加载消息时出错:', error);
+            alert('加载消息时出错，请重试');
         }
     }
     
@@ -1756,6 +2106,420 @@ class ChatClient {
         } else {
             this.searchExecuteBtn.textContent = '搜索';
             this.searchExecuteBtn.disabled = false;
+        }
+    }
+
+    // 转发功能初始化
+    initForward() {
+        // 获取DOM元素
+        this.multiSelectBtn = document.getElementById('multiSelectBtn');
+        this.multiSelectBtnText = document.getElementById('multiSelectBtnText');
+        this.forwardBtn = document.getElementById('forwardBtn');
+        this.selectedCount = document.getElementById('selectedCount');
+        this.forwardModal = document.getElementById('forwardModal');
+        this.forwardModalOverlay = document.getElementById('forwardModalOverlay');
+        this.closeForwardBtn = document.getElementById('closeForwardBtn');
+        this.targetRoomSelect = document.getElementById('targetRoomSelect');
+        this.forwardUsername = document.getElementById('forwardUsername');
+        this.forwardPassword = document.getElementById('forwardPassword');
+        this.forwardPasswordGroup = document.getElementById('forwardPasswordGroup');
+        this.cancelForwardBtn = document.getElementById('cancelForwardBtn');
+        this.confirmForwardBtn = document.getElementById('confirmForwardBtn');
+        this.forwardMessagesPreview = document.getElementById('forwardMessagesPreview');
+        
+        // 状态变量
+        this.isMultiSelectMode = false;
+        this.selectedMessages = new Set();
+        
+        // 绑定事件
+        if (this.multiSelectBtn) {
+            this.multiSelectBtn.addEventListener('click', () => this.toggleMultiSelectMode());
+        }
+        
+        if (this.forwardBtn) {
+            this.forwardBtn.addEventListener('click', () => this.openForwardModal());
+        }
+        
+        if (this.closeForwardBtn) {
+            this.closeForwardBtn.addEventListener('click', () => this.closeForwardModal());
+        }
+        
+        if (this.forwardModalOverlay) {
+            this.forwardModalOverlay.addEventListener('click', () => this.closeForwardModal());
+        }
+        
+        if (this.cancelForwardBtn) {
+            this.cancelForwardBtn.addEventListener('click', () => this.closeForwardModal());
+        }
+        
+        if (this.confirmForwardBtn) {
+            this.confirmForwardBtn.addEventListener('click', () => this.executeForward());
+        }
+        
+        if (this.targetRoomSelect) {
+            this.targetRoomSelect.addEventListener('change', () => this.onTargetRoomChange());
+        }
+        
+        // 加载聊天室列表
+        this.loadRoomsForForward();
+        
+        // ESC键退出多选模式
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isMultiSelectMode) {
+                this.toggleMultiSelectMode();
+            }
+        });
+    }
+    
+    // 切换多选模式
+    toggleMultiSelectMode() {
+        this.isMultiSelectMode = !this.isMultiSelectMode;
+        
+        if (this.isMultiSelectMode) {
+            // 进入多选模式
+            this.enterMultiSelectMode();
+        } else {
+            // 退出多选模式
+            this.exitMultiSelectMode();
+        }
+    }
+    
+    // 进入多选模式
+    enterMultiSelectMode() {
+        this.isMultiSelectMode = true;
+        this.selectedMessages.clear();
+        
+        // 更新按钮状态
+        if (this.multiSelectBtn) {
+            this.multiSelectBtn.classList.add('active');
+        }
+        if (this.multiSelectBtnText) {
+            this.multiSelectBtnText.textContent = '退出多选';
+        }
+        
+        // 显示所有消息的复选框
+        const messages = document.querySelectorAll('.message');
+        messages.forEach(messageEl => {
+            // 确保消息有复选框，如果没有则创建
+            let checkbox = messageEl.querySelector('.message-select-checkbox');
+            if (!checkbox) {
+                checkbox = document.createElement('div');
+                checkbox.className = 'message-select-checkbox';
+                checkbox.innerHTML = '<input type="checkbox" class="message-checkbox">';
+                messageEl.insertBefore(checkbox, messageEl.firstChild);
+            }
+            
+            checkbox.style.display = 'block';
+            
+            // 绑定复选框事件（移除旧的监听器避免重复绑定）
+            const input = checkbox.querySelector('input');
+            if (input) {
+                // 移除之前的事件监听器
+                input.removeEventListener('change', input._changeHandler);
+                
+                // 创建新的事件处理函数并保存引用
+                input._changeHandler = (e) => {
+                    this.onMessageSelectChange(messageEl, e.target.checked);
+                };
+                
+                input.addEventListener('change', input._changeHandler);
+            }
+        });
+        
+        // 添加多选模式样式
+        document.body.classList.add('multi-select-mode');
+        
+        this.updateForwardButton();
+        this.updateMultiSelectDisplay();
+    }
+    
+    // 退出多选模式
+    exitMultiSelectMode() {
+        this.isMultiSelectMode = false;
+        this.selectedMessages.clear();
+        
+        // 更新按钮状态
+        if (this.multiSelectBtn) {
+            this.multiSelectBtn.classList.remove('active');
+        }
+        if (this.multiSelectBtnText) {
+            this.multiSelectBtnText.textContent = '多选模式';
+        }
+        
+        // 隐藏所有消息的复选框
+        const messages = document.querySelectorAll('.message');
+        messages.forEach(messageEl => {
+            const checkbox = messageEl.querySelector('.message-select-checkbox');
+            if (checkbox) {
+                checkbox.style.display = 'none';
+                const input = checkbox.querySelector('input');
+                if (input) {
+                    input.checked = false;
+                }
+            }
+            messageEl.classList.remove('message-selected');
+        });
+        
+        // 移除多选模式样式
+        document.body.classList.remove('multi-select-mode');
+        
+        // 隐藏转发按钮
+        if (this.forwardBtn) {
+            this.forwardBtn.style.display = 'none';
+        }
+        
+        // 更新菜单显示
+        this.updateMultiSelectDisplay();
+    }
+    
+    // 消息选择状态改变
+    onMessageSelectChange(messageEl, selected) {
+        const messageId = messageEl.dataset.messageId;
+        
+        if (selected) {
+            this.selectedMessages.add(messageId);
+            messageEl.classList.add('message-selected');
+        } else {
+            this.selectedMessages.delete(messageId);
+            messageEl.classList.remove('message-selected');
+        }
+        
+        this.updateForwardButton();
+    }
+    
+    // 更新转发按钮状态
+    updateForwardButton() {
+        const selectedCount = this.selectedMessages.size;
+        
+        if (this.selectedCount) {
+            this.selectedCount.textContent = selectedCount;
+        }
+        
+        if (this.forwardBtn) {
+            if (selectedCount > 0) {
+                this.forwardBtn.style.display = 'block';
+            } else {
+                this.forwardBtn.style.display = 'none';
+            }
+        }
+        
+        // 更新菜单显示
+        this.updateMultiSelectDisplay();
+    }
+    
+    // 加载聊天室列表用于转发
+    async loadRoomsForForward() {
+        try {
+            const response = await fetch('/');
+            const html = await response.text();
+            
+            // 简单解析HTML获取聊天室信息（更好的做法是创建专门的API）
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const roomCards = doc.querySelectorAll('.room-card');
+            
+            if (this.targetRoomSelect) {
+                // 清空现有选项
+                this.targetRoomSelect.innerHTML = '<option value="">请选择聊天室</option>';
+                
+                roomCards.forEach(card => {
+                    const roomNameEl = card.querySelector('.room-name');
+                    if (roomNameEl) {
+                        const roomName = roomNameEl.textContent.trim().replace('🔒', '').trim();
+                        const hasPassword = roomNameEl.querySelector('.lock-icon') !== null;
+                        
+                        // 排除当前聊天室
+                        if (roomName !== this.roomName) {
+                            const option = document.createElement('option');
+                            option.value = roomName;
+                            option.textContent = roomName + (hasPassword ? ' 🔒' : '');
+                            option.dataset.hasPassword = hasPassword;
+                            this.targetRoomSelect.appendChild(option);
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('加载聊天室列表失败:', error);
+        }
+    }
+    
+    // 目标聊天室改变
+    onTargetRoomChange() {
+        const selectedOption = this.targetRoomSelect.selectedOptions[0];
+        const hasPassword = selectedOption && selectedOption.dataset.hasPassword === 'true';
+        
+        // 显示或隐藏密码输入框
+        if (this.forwardPasswordGroup) {
+            this.forwardPasswordGroup.style.display = hasPassword ? 'block' : 'none';
+        }
+        
+        this.validateForwardForm();
+    }
+    
+    // 验证转发表单
+    validateForwardForm() {
+        const targetRoom = this.targetRoomSelect?.value;
+        const username = this.forwardUsername?.value?.trim();
+        const selectedOption = this.targetRoomSelect?.selectedOptions[0];
+        const hasPassword = selectedOption && selectedOption.dataset.hasPassword === 'true';
+        const password = this.forwardPassword?.value;
+        
+        const isValid = targetRoom && username && (!hasPassword || password);
+        
+        if (this.confirmForwardBtn) {
+            this.confirmForwardBtn.disabled = !isValid;
+        }
+    }
+    
+    // 打开转发弹窗
+    openForwardModal() {
+        if (this.selectedMessages.size === 0) {
+            alert('请先选择要转发的消息');
+            return;
+        }
+        
+        this.generateForwardPreview();
+        
+        if (this.forwardModal) {
+            this.forwardModal.style.display = 'block';
+        }
+        
+        // 绑定表单验证事件
+        [this.forwardUsername, this.forwardPassword].forEach(input => {
+            if (input) {
+                input.addEventListener('input', () => this.validateForwardForm());
+            }
+        });
+        
+        this.validateForwardForm();
+    }
+    
+    // 关闭转发弹窗
+    closeForwardModal() {
+        if (this.forwardModal) {
+            this.forwardModal.style.display = 'none';
+        }
+        
+        // 重置表单
+        if (this.targetRoomSelect) {
+            this.targetRoomSelect.value = '';
+        }
+        if (this.forwardUsername) {
+            this.forwardUsername.value = '';
+        }
+        if (this.forwardPassword) {
+            this.forwardPassword.value = '';
+        }
+        if (this.forwardPasswordGroup) {
+            this.forwardPasswordGroup.style.display = 'none';
+        }
+    }
+    
+    // 生成转发预览
+    generateForwardPreview() {
+        if (!this.forwardMessagesPreview) return;
+        
+        this.forwardMessagesPreview.innerHTML = '';
+        
+        const selectedMessageElements = Array.from(this.selectedMessages).map(messageId => {
+            return document.querySelector(`[data-message-id="${messageId}"]`);
+        }).filter(Boolean);
+        
+        // 按时间顺序排序
+        selectedMessageElements.sort((a, b) => {
+            const timeA = new Date(a.dataset.timestamp || 0).getTime();
+            const timeB = new Date(b.dataset.timestamp || 0).getTime();
+            return timeA - timeB;
+        });
+        
+        selectedMessageElements.forEach(messageEl => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'forward-preview-item';
+            
+            const username = messageEl.dataset.username;
+            const messageType = messageEl.dataset.messageType;
+            const messageText = messageEl.dataset.messageText;
+            const filePath = messageEl.dataset.filePath;
+            
+            let content = '';
+            if (messageType === 'image') {
+                content = `<span class="preview-username">${username}:</span> <span class="preview-image">[图片] ${messageText}</span>`;
+            } else {
+                content = `<span class="preview-username">${username}:</span> <span class="preview-text">${messageText}</span>`;
+            }
+            
+            previewItem.innerHTML = content;
+            this.forwardMessagesPreview.appendChild(previewItem);
+        });
+    }
+    
+    // 执行转发
+    async executeForward() {
+        const targetRoom = this.targetRoomSelect.value;
+        const username = this.forwardUsername.value.trim();
+        const password = this.forwardPassword.value;
+        
+        if (!targetRoom || !username) {
+            alert('请填写完整的转发信息');
+            return;
+        }
+        
+        // 收集要转发的消息数据
+        const messagesToForward = Array.from(this.selectedMessages).map(messageId => {
+            const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageEl) {
+                return {
+                    id: messageId,
+                    username: messageEl.dataset.username,
+                    message: messageEl.dataset.messageText,
+                    message_type: messageEl.dataset.messageType,
+                    file_path: messageEl.dataset.filePath,
+                    timestamp: messageEl.dataset.timestamp
+                };
+            }
+            return null;
+        }).filter(Boolean);
+        
+        // 按时间排序
+        messagesToForward.sort((a, b) => {
+            const timeA = new Date(a.timestamp || 0).getTime();
+            const timeB = new Date(b.timestamp || 0).getTime();
+            return timeA - timeB;
+        });
+        
+        try {
+            this.confirmForwardBtn.disabled = true;
+            this.confirmForwardBtn.textContent = '转发中...';
+            
+            const response = await fetch('/api/forward-messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    target_room: targetRoom,
+                    username: username,
+                    password: password,
+                    messages: messagesToForward
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                alert(`成功转发 ${messagesToForward.length} 条消息到 ${targetRoom}`);
+                this.closeForwardModal();
+                this.exitMultiSelectMode();
+            } else {
+                alert('转发失败: ' + result.message);
+            }
+        } catch (error) {
+            console.error('转发错误:', error);
+            alert('转发失败，请重试');
+        } finally {
+            this.confirmForwardBtn.disabled = false;
+            this.confirmForwardBtn.textContent = '转发消息';
         }
     }
 

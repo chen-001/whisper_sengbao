@@ -7,16 +7,67 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- 主题切换按钮 -->
-    <div class="theme-toggle" id="themeToggle">
-        <span class="theme-toggle-icon">🌸</span>
-        <span class="theme-toggle-text">森林</span>
+    <!-- 统一功能菜单 -->
+    <div class="function-menu" id="functionMenu">
+        <button class="menu-trigger" id="menuTrigger" title="功能菜单">
+            <span class="menu-icon">⚙️</span>
+        </button>
+        
+        <div class="menu-dropdown" id="menuDropdown">
+            <div class="menu-item" id="themeToggleItem">
+                <span class="menu-item-icon">🌸</span>
+                <span class="menu-item-text">切换主题</span>
+                <span class="menu-item-value" id="themeValue">森林</span>
+            </div>
+            
+            <div class="menu-item" id="notificationToggleItem" title="切换消息通知">
+                <span class="menu-item-icon">🔔</span>
+                <span class="menu-item-text">消息通知</span>
+                <span class="menu-item-value" id="notificationValue">关闭</span>
+            </div>
+            
+            <div class="menu-divider"></div>
+            
+            <div class="menu-item" id="userListToggle">
+                <span class="menu-item-icon">👥</span>
+                <span class="menu-item-text">在线用户</span>
+                <span class="menu-item-arrow">▼</span>
+            </div>
+            
+            <div class="menu-item" id="searchToggleItem">
+                <span class="menu-item-icon">🔍</span>
+                <span class="menu-item-text">搜索记录</span>
+            </div>
+            
+            <div class="menu-divider"></div>
+            
+            <div class="menu-item" id="multiSelectToggleItem">
+                <span class="menu-item-icon">☑️</span>
+                <span class="menu-item-text" id="multiSelectMenuText">多选模式</span>
+            </div>
+            
+            <div class="menu-item" id="forwardToggleItem" style="display: none;">
+                <span class="menu-item-icon">📤</span>
+                <span class="menu-item-text">转发消息</span>
+                <span class="menu-item-badge" id="selectedCountMenu">0</span>
+            </div>
+        </div>
     </div>
 
-    <!-- 通知开关按钮 -->
-    <div class="notification-toggle" id="notificationToggle" title="切换消息通知">
-        <span class="notification-icon">🔔</span>
-        <span class="notification-status" id="notificationStatus">关闭</span>
+    <!-- 在线用户列表弹窗 -->
+    <div class="users-modal" id="usersModal">
+        <div class="users-modal-overlay" id="usersModalOverlay"></div>
+        <div class="users-modal-content">
+            <div class="users-modal-header">
+                <h3>在线用户</h3>
+                <button class="close-users-btn" id="closeUsersBtn">×</button>
+            </div>
+            <div class="users-modal-body">
+                <ul id="usersModalList" class="users-modal-list">
+                    <!-- 在线用户列表会在这里显示 -->
+                </ul>
+            </div>
+        </div>
     </div>
 
     <!-- 消息上下文菜单 -->
@@ -41,9 +92,8 @@
             </div>
         </header>
 
-        <div class="chat-layout">
-            <!-- 聊天消息区域 -->
-            <main class="chat-main">
+        <!-- 聊天消息区域 -->
+        <main class="chat-main-full">
                 <div class="messages-container" id="messagesContainer">
                     <!-- 加载更多按钮 -->
                     <div class="load-more-container" id="loadMoreContainer" style="display: none;">
@@ -164,25 +214,17 @@
                         </div>
                     </div>
                 </div>
-            </main>
+        </main>
 
-            <!-- 侧边栏：在线用户 -->
-            <aside class="chat-sidebar">
-                <h3>在线用户</h3>
-                <ul id="usersList" class="users-list">
-                    <!-- 在线用户列表会在这里显示 -->
-                </ul>
-                
-                <!-- 搜索功能 -->
-                <div class="sidebar-section">
-                    <h3>搜索聊天记录</h3>
-                    <button class="sidebar-search-btn" id="searchBtn" title="搜索聊天记录">
-                        <span class="search-icon">🔍</span>
-                        <span>搜索消息</span>
-                    </button>
-                </div>
-            </aside>
-        </div>
+        <!-- 隐藏的在线用户列表和功能按钮 -->
+        <ul id="usersList" class="users-list" style="display: none;">
+            <!-- 在线用户列表会在这里显示 -->
+        </ul>
+        <button id="searchBtn" style="display: none;"></button>
+        <button id="multiSelectBtn" style="display: none;"></button>
+        <button id="forwardBtn" style="display: none;"></button>
+        <span id="multiSelectBtnText" style="display: none;"></span>
+        <span id="selectedCount" style="display: none;"></span>
     </div>
 
     <!-- 搜索弹窗 -->
@@ -225,8 +267,52 @@
         </div>
     </div>
 
+    <!-- 转发消息弹窗 -->
+    <div class="forward-modal" id="forwardModal">
+        <div class="forward-modal-overlay" id="forwardModalOverlay"></div>
+        <div class="forward-modal-content">
+            <div class="forward-modal-header">
+                <h3>转发消息</h3>
+                <button class="close-forward-btn" id="closeForwardBtn">×</button>
+            </div>
+            <div class="forward-modal-body">
+                <div class="forward-preview-section">
+                    <h4>要转发的消息预览</h4>
+                    <div class="forward-messages-preview" id="forwardMessagesPreview">
+                        <!-- 选中的消息预览会在这里显示 -->
+                    </div>
+                </div>
+                
+                <div class="forward-settings-section">
+                    <div class="form-group">
+                        <label for="targetRoomSelect">选择目标聊天室：</label>
+                        <select id="targetRoomSelect" class="form-select" required>
+                            <option value="">请选择聊天室</option>
+                            <!-- 聊天室选项会通过JavaScript动态加载 -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="forwardUsername">您在目标聊天室的昵称：</label>
+                        <input type="text" id="forwardUsername" class="form-input" placeholder="输入您的昵称" maxlength="20" required>
+                    </div>
+                    
+                    <div class="form-group" id="forwardPasswordGroup" style="display: none;">
+                        <label for="forwardPassword">聊天室密码：</label>
+                        <input type="password" id="forwardPassword" class="form-input" placeholder="输入聊天室密码">
+                        <small class="form-help">此聊天室需要密码才能发送消息</small>
+                    </div>
+                </div>
+            </div>
+            <div class="forward-modal-footer">
+                <button class="btn btn-secondary" id="cancelForwardBtn">取消</button>
+                <button class="btn btn-primary" id="confirmForwardBtn" disabled>转发消息</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 设置昵称模态框 -->
-    <div id="usernameModal" class="modal modal-open">
+    <div id="usernameModal" class="modal">
         <div class="modal-content">
             <h2>设置您的昵称</h2>
             <form id="usernameForm">

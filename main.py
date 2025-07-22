@@ -394,6 +394,87 @@ async def search_messages(
         print(f"搜索消息错误: {e}")
         return {"status": "error", "message": "搜索失败，请重试"}
 
+@app.post("/api/forward-messages")
+async def forward_messages(request: Request):
+    """转发消息到其他聊天室"""
+    try:
+        data = await request.json()
+        target_room = data.get("target_room")
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+        messages = data.get("messages", [])
+        
+        if not target_room or not username:
+            return {
+                "status": "error",
+                "message": "目标聊天室和用户名不能为空"
+            }
+        
+        if not messages:
+            return {
+                "status": "error", 
+                "message": "没有要转发的消息"
+            }
+        
+        # 验证目标聊天室是否存在并检查密码
+        if not db.verify_room_password(target_room, password):
+            return {
+                "status": "error",
+                "message": "聊天室不存在或密码错误"
+            }
+        
+        # 转发每条消息
+        forwarded_count = 0
+        for msg in messages:
+            try:
+                # 构建转发消息的内容
+                original_username = msg.get("username", "未知用户")
+                original_message = msg.get("message", "")
+                message_type = msg.get("message_type", "text")
+                file_path = msg.get("file_path")
+                
+                if message_type == "image" and file_path:
+                    # 图片消息转发
+                    forward_content = f"[转发自 {original_username}] {original_message}"
+                    db.save_message(
+                        room_name=target_room,
+                        username=username,
+                        message=forward_content,
+                        message_type="image",
+                        file_path=file_path
+                    )
+                else:
+                    # 文本消息转发
+                    forward_content = f"[转发自 {original_username}] {original_message}"
+                    db.save_message(
+                        room_name=target_room,
+                        username=username,
+                        message=forward_content,
+                        message_type="text"
+                    )
+                
+                forwarded_count += 1
+                
+            except Exception as msg_error:
+                print(f"转发单条消息失败: {msg_error}")
+                continue
+        
+        if forwarded_count == 0:
+            return {
+                "status": "error",
+                "message": "所有消息转发失败"
+            }
+        
+        return {
+            "status": "success",
+            "message": f"成功转发 {forwarded_count} 条消息",
+            "forwarded_count": forwarded_count
+        }
+        
+    except Exception as e:
+        print(f"转发消息错误: {e}")
+        return {"status": "error", "message": "转发失败，请重试"}
+
 @app.websocket("/ws/{room_name}")
 async def websocket_endpoint(websocket: WebSocket, room_name: str):
     """WebSocket连接端点"""

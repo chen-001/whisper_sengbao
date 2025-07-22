@@ -191,8 +191,8 @@ async function handleJoinRoom(e) {
         // 将用户名保存到localStorage
         localStorage.setItem('chatUsername', username);
         
-        // 跳转到聊天室页面
-        window.location.href = `/chat/${encodeURIComponent(selectedRoom)}`;
+        // 跳转到聊天室页面，在URL中包含用户名参数
+        window.location.href = `/chat/${encodeURIComponent(selectedRoom)}?username=${encodeURIComponent(username)}`;
     } catch (error) {
         // 如果跳转失败，恢复按钮状态
         submitBtn.disabled = false;

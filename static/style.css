@@ -83,16 +83,20 @@ body.forest-theme::before {
     }
 }
 
-/* 主题切换按钮样式 */
-.theme-toggle {
+/* 统一功能菜单样式 */
+.function-menu {
     position: fixed;
     top: 20px;
-    right: 20px;
+    right: 80px;
     z-index: 1000;
+}
+
+.menu-trigger {
     background: var(--current-card);
     border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 50px;
-    padding: 10px 20px;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
@@ -101,21 +105,217 @@ body.forest-theme::before {
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    font-size: 1.2rem;
 }
 
-.theme-toggle:hover {
+.menu-trigger:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(0,0,0,0.2);
 }
 
-.theme-toggle-icon {
-    font-size: 1.2rem;
+.menu-trigger:hover .menu-icon {
+    transform: rotate(90deg);
+}
+
+.menu-icon {
     transition: transform 0.3s ease;
 }
 
-.theme-toggle:hover .theme-toggle-icon {
-    transform: rotate(180deg);
+.menu-dropdown {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    min-width: 220px;
+    background: var(--current-card);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 12px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+    backdrop-filter: blur(20px);
+    display: none;
+    overflow: hidden;
+    animation: menuSlideDown 0.3s ease-out;
+}
+
+@keyframes menuSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-dropdown.show {
+    display: block;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+}
+
+.menu-item:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateX(2px);
+}
+
+.menu-item-icon {
+    margin-right: 12px;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.menu-item-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.menu-item-value {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-left: 8px;
+}
+
+.menu-item-arrow {
+    font-size: 12px;
+    opacity: 0.5;
+    margin-left: 8px;
+}
+
+.menu-item-badge {
+    background: #dc3545;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.menu-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 4px 0;
+}
+
+/* 在线用户弹窗样式 */
+.users-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    display: none;
+}
+
+.users-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.users-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.users-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: #f8f9fa;
+}
+
+.users-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+.close-users-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.close-users-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+.users-modal-body {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+}
+
+.users-modal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.users-modal-list li {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.users-modal-list li:before {
+    content: '👤';
+    font-size: 16px;
 }
 
 /* 查看更新公告按钮样式 */
@@ -725,59 +925,7 @@ body.forest-theme .room-card:hover {
     opacity: 0.8;
 }
 
-/* 通知开关样式 */
-.notification-toggle {
-    position: fixed;
-    top: 20px;
-    right: 180px;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 15px;
-    background: var(--current-card);
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 25px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    font-size: 0.85rem;
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.notification-toggle:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    border-color: rgba(255,255,255,0.5);
-}
-
-.notification-toggle.enabled {
-    background: var(--current-accent);
-    color: white;
-    border-color: transparent;
-}
-
-.notification-toggle.enabled .notification-icon {
-    animation: bellShake 0.6s ease-in-out;
-}
-
-.notification-icon {
-    font-size: 1rem;
-    transition: all 0.3s ease;
-}
-
-.notification-status {
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-@keyframes bellShake {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(-10deg); }
-    75% { transform: rotate(10deg); }
-}
+/* 移除了通知开关的独立样式，现在集成在菜单中 */
 
 .status-connected {
     color: #48bb78;
@@ -787,18 +935,11 @@ body.forest-theme .room-card:hover {
     color: #f56565;
 }
 
-/* 聊天布局 */
-.chat-layout {
-    flex: 1;
-    display: flex;
-    min-height: 0; /* 允许子元素缩小 */
-}
-
-.chat-main {
+/* 新的聊天布局（全屏） */
+.chat-main-full {
     flex: 1;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid rgba(255,255,255,0.2);
     background: var(--current-card);
     backdrop-filter: blur(20px);
 }
@@ -1332,20 +1473,8 @@ body.forest-theme .room-card:hover {
         grid-template-columns: 1fr;
     }
     
-    .chat-layout {
-        flex-direction: column;
-    }
-    
-    .chat-sidebar {
-        width: 100%;
-        order: -1;
-        max-height: 150px;
-        overflow-y: auto;
-    }
-    
-    .chat-main {
-        border-right: none;
-        border-top: 1px solid #e2e8f0;
+    .chat-main-full {
+        /* 移动端全屏聊天区域 */
     }
     
     .messages-container {
@@ -1363,17 +1492,15 @@ body.forest-theme .room-card:hover {
         align-items: center;
     }
     
-    .notification-toggle {
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        font-size: 0.75rem;
-        padding: 6px 12px;
+    .menu-trigger {
+        width: 45px;
+        height: 45px;
+        font-size: 1rem;
     }
     
-    .theme-toggle {
-        padding: 8px 15px;
-        font-size: 0.85rem;
+    .menu-dropdown {
+        min-width: 200px;
+        right: -10px;
     }
     
     /* 移动端表情选择器适配 */
@@ -2716,5 +2843,357 @@ body.forest-theme .search-option:hover {
         flex-direction: column;
         gap: 12px;
         padding: 16px 20px;
+    }
+}
+
+/* ================================
+   转发功能样式
+   ================================ */
+
+/* 侧边栏多选和转发按钮 */
+.sidebar-multi-select-btn,
+.sidebar-forward-btn {
+    width: 100%;
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    justify-content: center;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.sidebar-multi-select-btn:hover,
+.sidebar-forward-btn:hover {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+}
+
+.sidebar-multi-select-btn.active {
+    background: rgba(255, 193, 7, 0.15);
+    border-color: rgba(255, 193, 7, 0.4);
+    color: #856404;
+}
+
+.sidebar-forward-btn {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: rgba(40, 167, 69, 0.3);
+}
+
+.sidebar-forward-btn:hover {
+    background: rgba(40, 167, 69, 0.15);
+    border-color: rgba(40, 167, 69, 0.4);
+}
+
+body.forest-theme .sidebar-multi-select-btn,
+body.forest-theme .sidebar-forward-btn {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+body.forest-theme .sidebar-multi-select-btn:hover,
+body.forest-theme .sidebar-forward-btn:hover {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+.multi-select-icon,
+.forward-icon {
+    font-size: 16px;
+}
+
+.selected-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* 消息多选样式 */
+.message-select-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+}
+
+.message-select-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #007bff;
+}
+
+.message-selected {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    border: 2px solid rgba(0, 123, 255, 0.3) !important;
+}
+
+body.multi-select-mode .message {
+    padding-left: 40px;
+    position: relative;
+}
+
+/* 转发弹窗 */
+.forward-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2500;
+    display: none;
+}
+
+.forward-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.forward-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 95%;
+    max-width: 700px;
+    max-height: 90vh;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 转发弹窗头部 */
+.forward-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: #f8f9fa;
+}
+
+.forward-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+.close-forward-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.close-forward-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+/* 转发弹窗主体 */
+.forward-modal-body {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* 转发预览区域 */
+.forward-preview-section h4 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.forward-messages-preview {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    background: #f8f9fa;
+}
+
+.forward-preview-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+}
+
+.forward-preview-item:last-child {
+    border-bottom: none;
+}
+
+.preview-username {
+    font-weight: 600;
+    color: #495057;
+}
+
+.preview-text {
+    color: #333;
+    word-break: break-word;
+}
+
+.preview-image {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* 转发设置区域 */
+.forward-settings-section .form-group {
+    margin-bottom: 20px;
+}
+
+.forward-settings-section label {
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-select,
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus,
+.form-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-select {
+    cursor: pointer;
+}
+
+.form-help {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* 转发弹窗底部 */
+.forward-modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.forward-modal-footer .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.forward-modal-footer .btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.forward-modal-footer .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+.forward-modal-footer .btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.forward-modal-footer .btn-primary:hover:not(:disabled) {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.forward-modal-footer .btn-primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 移动端转发弹窗适配 */
+@media (max-width: 768px) {
+    .forward-modal-content {
+        width: 98%;
+        max-height: 95vh;
+        margin: 10px;
+    }
+    
+    .forward-modal-header,
+    .forward-modal-body,
+    .forward-modal-footer {
+        padding: 16px 20px;
+    }
+    
+    .forward-modal-body {
+        gap: 20px;
+    }
+    
+    .forward-messages-preview {
+        max-height: 150px;
+    }
+    
+    .forward-modal-footer {
+        flex-direction: column;
+    }
+    
+    .forward-modal-footer .btn {
+        width: 100%;
+        padding: 14px;
     }
 }
