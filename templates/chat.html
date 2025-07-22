@@ -313,6 +313,22 @@
         </div>
     </div>
 
+    <!-- 转发消息详情弹窗 -->
+    <div class="forward-details-modal" id="forwardDetailsModal">
+        <div class="forward-details-overlay" id="forwardDetailsOverlay"></div>
+        <div class="forward-details-content">
+            <div class="forward-details-header">
+                <h3>聊天记录</h3>
+                <button class="close-forward-details-btn" id="closeForwardDetailsBtn">×</button>
+            </div>
+            <div class="forward-details-body">
+                <div class="forward-messages-list" id="forwardMessagesList">
+                    <!-- 转发的消息列表会在这里显示 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 设置昵称模态框 -->
     <div id="usernameModal" class="modal">
         <div class="modal-content">
@@ -337,6 +353,7 @@
         };
     </script>
     <script src="/static/emojis/wechat-emojis-data.js"></script>
+    <script src="/static/forward.js"></script>
     <script src="/static/chat.js"></script>
 </body>
 </html> 

@@ -7,6 +7,7 @@ class ChatClient {
         this.userId = null;
         this.roomName = window.chatData.roomName;
         this.isConnected = false;
+        this.messageCache = {};
         this.longPressTimer = null;
         this.longPressDelay = 500; // 长按500毫秒触发
         this.hasMoreMessages = true;
@@ -616,6 +617,9 @@ class ChatClient {
     }
     
     displayMessage(data) {
+        // 缓存消息数据
+        this.cacheMessage(data);
+        
         const messageEl = this.createMessageElement(data);
         this.messagesContainer.appendChild(messageEl);
         this.scrollToBottom();
@@ -698,7 +702,25 @@ class ChatClient {
         }
         
         // 根据消息类型构建内容
-        if (data.message_type === 'image') {
+        if (data.message_type === 'forward_group') {
+            // 转发消息组 - 使用独立模块处理
+            messageEl.classList.add('forward-group');
+            const forwardData = data.quotedMessage || {};
+            const messageCount = forwardData.message_count || 0;
+            
+            messageContent += `
+                ${!isOwnMessage ? `<div class="message-username">${this.escapeHtml(data.username)}</div>` : ''}
+                <div class="forward-group-indicator">
+                    <span>📋 聊天记录</span>
+                    <span class="forward-group-count">${messageCount}条</span>
+                </div>
+                <div class="forward-group-preview" onclick="showForwardDetails('${data.id}')">
+                    <div class="message-text">${this.escapeHtml(data.message)}</div>
+                    <div class="forward-expand-hint">点击查看详细聊天记录</div>
+                </div>
+                ${timeString ? `<div class="message-time">${timeString}</div>` : ''}
+            `;
+        } else if (data.message_type === 'image') {
             // 图片消息
             messageContent += `
                 ${!isOwnMessage ? `<div class="message-username">${this.escapeHtml(data.username)}</div>` : ''}
@@ -2328,14 +2350,16 @@ class ChatClient {
                         const roomName = roomNameEl.textContent.trim().replace('🔒', '').trim();
                         const hasPassword = roomNameEl.querySelector('.lock-icon') !== null;
                         
-                        // 排除当前聊天室
-                        if (roomName !== this.roomName) {
-                            const option = document.createElement('option');
-                            option.value = roomName;
+                        // 包含当前聊天室，但给予特殊标识
+                        const option = document.createElement('option');
+                        option.value = roomName;
+                        if (roomName === this.roomName) {
+                            option.textContent = roomName + ' (当前聊天室)' + (hasPassword ? ' 🔒' : '');
+                        } else {
                             option.textContent = roomName + (hasPassword ? ' 🔒' : '');
-                            option.dataset.hasPassword = hasPassword;
-                            this.targetRoomSelect.appendChild(option);
                         }
+                        option.dataset.hasPassword = hasPassword;
+                        this.targetRoomSelect.appendChild(option);
                     }
                 });
             }
@@ -2640,6 +2664,17 @@ class ChatClient {
         } catch (error) {
             console.error('删除自定义表情失败:', error);
             alert('删除失败，请重试');
+        }
+    }
+
+    // 缓存消息数据
+    cacheMessage(messageData) {
+        if (messageData.id) {
+            this.messageCache[messageData.id] = messageData;
+            // 同时缓存到转发处理器中
+            if (window.forwardHandler) {
+                window.forwardHandler.cacheMessage(messageData);
+            }
         }
     }
 

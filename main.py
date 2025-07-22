@@ -423,46 +423,55 @@ async def forward_messages(request: Request):
                 "message": "聊天室不存在或密码错误"
             }
         
-        # 转发每条消息
-        forwarded_count = 0
-        for msg in messages:
-            try:
-                # 构建转发消息的内容
-                original_username = msg.get("username", "未知用户")
-                original_message = msg.get("message", "")
-                message_type = msg.get("message_type", "text")
-                file_path = msg.get("file_path")
-                
-                if message_type == "image" and file_path:
-                    # 图片消息转发
-                    forward_content = f"[转发自 {original_username}] {original_message}"
-                    db.save_message(
-                        room_name=target_room,
-                        username=username,
-                        message=forward_content,
-                        message_type="image",
-                        file_path=file_path
-                    )
-                else:
-                    # 文本消息转发
-                    forward_content = f"[转发自 {original_username}] {original_message}"
-                    db.save_message(
-                        room_name=target_room,
-                        username=username,
-                        message=forward_content,
-                        message_type="text"
-                    )
-                
-                forwarded_count += 1
-                
-            except Exception as msg_error:
-                print(f"转发单条消息失败: {msg_error}")
-                continue
-        
-        if forwarded_count == 0:
+        # 将多条消息合并为一个转发记录
+        try:
+            # 构建转发消息的摘要内容
+            message_count = len(messages)
+            first_msg = messages[0] if messages else {}
+            first_username = first_msg.get("username", "未知用户")
+            
+            # 生成转发记录的显示摘要
+            if message_count == 1:
+                forward_summary = f"{first_username}: {first_msg.get('message', '')[:20]}..."
+            else:
+                forward_summary = f"{first_username} 等{message_count}人的聊天记录"
+            
+            # 准备转发数据，包含所有原始消息信息
+            forward_data = {
+                "type": "forward_group",
+                "message_count": message_count,
+                "messages": []
+            }
+            
+            # 处理每条消息的数据
+            for msg in messages:
+                msg_data = {
+                    "username": msg.get("username", "未知用户"),
+                    "message": msg.get("message", ""),
+                    "message_type": msg.get("message_type", "text"),
+                    "file_path": msg.get("file_path"),
+                    "timestamp": msg.get("timestamp"),
+                    "quoted_message": msg.get("quoted_message")
+                }
+                forward_data["messages"].append(msg_data)
+            
+            # 保存转发记录到数据库
+            db.save_message(
+                room_name=target_room,
+                username=username,
+                message=forward_summary,
+                message_type="forward_group",
+                file_path=None,
+                quoted_message=forward_data  # 将转发数据存储在quoted_message字段中
+            )
+            
+            forwarded_count = message_count
+            
+        except Exception as msg_error:
+            print(f"创建转发记录失败: {msg_error}")
             return {
                 "status": "error",
-                "message": "所有消息转发失败"
+                "message": "转发失败，请重试"
             }
         
         return {
@@ -474,6 +483,24 @@ async def forward_messages(request: Request):
     except Exception as e:
         print(f"转发消息错误: {e}")
         return {"status": "error", "message": "转发失败，请重试"}
+
+@app.get("/api/message-details/{message_id}")
+async def get_message_details(message_id: str):
+    """获取消息详情（主要用于获取转发消息的完整数据）"""
+    try:
+        # 从数据库获取消息详情
+        message = db.get_message_by_id(message_id)
+        if not message:
+            return {"status": "error", "message": "消息不存在"}
+        
+        return {
+            "status": "success",
+            "data": message
+        }
+        
+    except Exception as e:
+        print(f"获取消息详情错误: {e}")
+        return {"status": "error", "message": "获取失败"}
 
 @app.websocket("/ws/{room_name}")
 async def websocket_endpoint(websocket: WebSocket, room_name: str):

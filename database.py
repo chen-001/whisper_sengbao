@@ -391,4 +391,45 @@ class ChatDatabase:
         return {
             "messages": messages,
             "total_count": total_count
-        } 
+        }
+    
+    def get_message_by_id(self, message_id: str) -> Optional[Dict]:
+        """根据消息ID获取单条消息详情"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                SELECT id, username, message, timestamp, message_type, file_path, quoted_message, room_name
+                FROM messages 
+                WHERE id = ?
+            ''', (message_id,))
+            
+            row = cursor.fetchone()
+            if not row:
+                return None
+                
+            message_data = {
+                'id': row[0],
+                'username': row[1],
+                'message': row[2],
+                'timestamp': row[3],
+                'message_type': row[4] or 'text',
+                'file_path': row[5],
+                'room_name': row[7]
+            }
+            
+            # 解析引用消息JSON（转发数据）
+            if row[6]:
+                try:
+                    message_data['quotedMessage'] = json.loads(row[6])
+                except json.JSONDecodeError:
+                    pass
+            
+            return message_data
+            
+        except Exception as e:
+            print(f"获取消息详情错误: {e}")
+            return None
+        finally:
+            conn.close() 
