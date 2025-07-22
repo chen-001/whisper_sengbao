@@ -72,6 +72,9 @@ class ChatClient {
         // 初始化自定义表情
         this.initCustomEmojis();
         
+        // 初始化表情搜索
+        this.initEmojiSearch();
+        
         // 尝试从localStorage获取用户名
         const savedUsername = localStorage.getItem('chatUsername');
         if (savedUsername) {
@@ -858,38 +861,144 @@ class ChatClient {
 
     // 初始化表情选择器
     initEmojiPicker() {
-        // 表情数据按分类组织
+        // 合并微信表情数据和原有表情数据
         this.emojiData = {
-            smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥'],
-            people: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤞', '✌️', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃'],
-            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜'],
-            food: ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞'],
-            activities: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛴', '🚁', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎫', '🎟️'],
-            travel: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛺', '🚁', '🛩️', '✈️', '🛫', '🛬', '🪂', '💺', '🚀', '🛸', '🚁', '🛶', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚢', '⚓', '⛽', '🚧', '🚦'],
-            objects: ['💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '💰', '💳', '💎', '⚖️', '🧰', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🔩', '⚙️', '🧲', '💣', '🧨', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭'],
-            symbols: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐']
+            // 微信表情优先显示
+            ...window.WECHAT_EMOJIS_DATA,
+            
+            // 保留原有分类（转换为新格式）
+            smileys: {
+                name: '笑脸',
+                icon: '😀',
+                emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥'].map(emoji => ({
+                    unicode: this.getEmojiUnicode(emoji),
+                    name: emoji,
+                    url: null, // 使用Unicode字符显示
+                    keywords: [emoji]
+                }))
+            },
+            people: {
+                name: '人物',
+                icon: '👋',
+                emojis: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤞', '✌️', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '👂', '👃'].map(emoji => ({
+                    unicode: this.getEmojiUnicode(emoji),
+                    name: emoji,
+                    url: null,
+                    keywords: [emoji]
+                }))
+            },
+            animals: {
+                name: '动物',
+                icon: '🐶',
+                emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜'].map(emoji => ({
+                    unicode: this.getEmojiUnicode(emoji),
+                    name: emoji,
+                    url: null,
+                    keywords: [emoji]
+                }))
+            },
+            food: {
+                name: '食物',
+                icon: '🍎',
+                emojis: ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🌽', '🥕', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞'].map(emoji => ({
+                    unicode: this.getEmojiUnicode(emoji),
+                    name: emoji,
+                    url: null,
+                    keywords: [emoji]
+                }))
+            },
+            activities: {
+                name: '活动',
+                icon: '⚽',
+                emojis: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🥅', '⛳', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛴', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎫', '🎟️'].map(emoji => ({
+                    unicode: this.getEmojiUnicode(emoji),
+                    name: emoji,
+                    url: null,
+                    keywords: [emoji]
+                }))
+            },
+            objects: {
+                name: '物品',
+                icon: '💡',
+                emojis: ['💡', '🔦', '🕯️', '🧯', '💸', '💵', '💰', '💳', '💎', '⚖️', '🧰', '🔧', '🔨', '🛠️', '⛏️', '🔩', '⚙️', '🧲', '💣', '🧨', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭'].map(emoji => ({
+                    unicode: this.getEmojiUnicode(emoji),
+                    name: emoji,
+                    url: null,
+                    keywords: [emoji]
+                }))
+            },
+            symbols: {
+                name: '符号',
+                icon: '❤️',
+                emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐'].map(emoji => ({
+                    unicode: this.getEmojiUnicode(emoji),
+                    name: emoji,
+                    url: null,
+                    keywords: [emoji]
+                }))
+            }
         };
         
-        this.currentCategory = 'smileys';
+        this.currentCategory = 'wechat_classic'; // 默认显示微信经典表情
         this.renderEmojiGrid();
+    }
+
+    // 获取emoji的Unicode编码
+    getEmojiUnicode(emoji) {
+        return emoji.codePointAt(0).toString(16);
     }
 
     // 渲染表情网格
     renderEmojiGrid() {
         if (!this.emojiGrid) return;
         
-        const emojis = this.emojiData[this.currentCategory] || [];
+        const categoryData = this.emojiData[this.currentCategory];
+        if (!categoryData) return;
+        
+        const emojis = categoryData.emojis || [];
         this.emojiGrid.innerHTML = '';
         
-        emojis.forEach(emoji => {
+        emojis.forEach(emojiData => {
             const button = document.createElement('button');
             button.className = 'emoji-item';
-            button.textContent = emoji;
+            button.title = emojiData.name;
+            
+            if (emojiData.url) {
+                // 使用图片显示（Twemoji CDN）
+                const img = document.createElement('img');
+                img.src = emojiData.url;
+                img.alt = emojiData.name;
+                img.className = 'emoji-image';
+                img.style.width = '20px';
+                img.style.height = '20px';
+                
+                // 图片加载失败时回退到Unicode字符
+                img.onerror = () => {
+                    button.innerHTML = '';
+                    button.textContent = this.unicodeToEmoji(emojiData.unicode);
+                };
+                
+                button.appendChild(img);
+            } else {
+                // 使用Unicode字符显示
+                button.textContent = emojiData.name;
+            }
+            
             button.addEventListener('click', () => {
-                this.insertEmoji(emoji);
+                // 统一使用Unicode字符插入
+                const emojiChar = emojiData.url ? 
+                    this.unicodeToEmoji(emojiData.unicode) : 
+                    emojiData.name;
+                this.insertEmoji(emojiChar);
             });
+            
             this.emojiGrid.appendChild(button);
         });
+    }
+
+    // Unicode编码转换为表情字符
+    unicodeToEmoji(unicode) {
+        return String.fromCodePoint(parseInt(unicode, 16));
     }
 
     // 切换表情分类
@@ -1194,6 +1303,136 @@ class ChatClient {
             console.warn(`找不到ID为${messageId}的消息`);
             // 可以在这里添加提示，比如"消息不在当前页面，可能需要加载更多历史消息"
         }
+    }
+
+    // 初始化表情搜索
+    initEmojiSearch() {
+        const emojiSearch = document.getElementById('emojiSearch');
+        const clearSearchBtn = document.getElementById('clearEmojiSearch');
+        
+        if (!emojiSearch) return;
+        
+        // 搜索输入事件
+        emojiSearch.addEventListener('input', (e) => {
+            const keyword = e.target.value.trim();
+            this.handleEmojiSearch(keyword);
+            
+            // 显示/隐藏清除按钮
+            clearSearchBtn.style.display = keyword ? 'flex' : 'none';
+        });
+        
+        // 清除搜索
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                emojiSearch.value = '';
+                clearSearchBtn.style.display = 'none';
+                this.clearEmojiSearch();
+            });
+        }
+        
+        // 回车键搜索
+        emojiSearch.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const keyword = e.target.value.trim();
+                this.handleEmojiSearch(keyword);
+            }
+        });
+    }
+
+    // 处理表情搜索
+    handleEmojiSearch(keyword) {
+        if (!keyword) {
+            this.clearEmojiSearch();
+            return;
+        }
+        
+        const searchResults = this.searchEmojis(keyword);
+        this.renderSearchResults(searchResults);
+    }
+
+    // 搜索表情
+    searchEmojis(keyword) {
+        const results = [];
+        const lowerKeyword = keyword.toLowerCase();
+        
+        Object.values(this.emojiData).forEach(category => {
+            if (category.emojis) {
+                category.emojis.forEach(emojiData => {
+                    const matchKeywords = emojiData.keywords || [];
+                    const matchName = emojiData.name.toLowerCase();
+                    
+                    if (matchName.includes(lowerKeyword) || 
+                        matchKeywords.some(k => k.toLowerCase().includes(lowerKeyword))) {
+                        results.push(emojiData);
+                    }
+                });
+            }
+        });
+        
+        return results;
+    }
+
+    // 渲染搜索结果
+    renderSearchResults(results) {
+        if (!this.emojiGrid) return;
+        
+        this.emojiGrid.innerHTML = '';
+        
+        if (results.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'emoji-no-results';
+            noResults.textContent = '没找到匹配的表情';
+            this.emojiGrid.appendChild(noResults);
+            return;
+        }
+        
+        results.forEach(emojiData => {
+            const button = document.createElement('button');
+            button.className = 'emoji-item';
+            button.title = emojiData.name;
+            
+            if (emojiData.url) {
+                const img = document.createElement('img');
+                img.src = emojiData.url;
+                img.alt = emojiData.name;
+                img.className = 'emoji-image';
+                img.style.width = '20px';
+                img.style.height = '20px';
+                
+                img.onerror = () => {
+                    button.innerHTML = '';
+                    button.textContent = this.unicodeToEmoji(emojiData.unicode);
+                };
+                
+                button.appendChild(img);
+            } else {
+                button.textContent = emojiData.name;
+            }
+            
+            button.addEventListener('click', () => {
+                const emojiChar = emojiData.url ? 
+                    this.unicodeToEmoji(emojiData.unicode) : 
+                    emojiData.name;
+                this.insertEmoji(emojiChar);
+            });
+            
+            this.emojiGrid.appendChild(button);
+        });
+    }
+
+    // 清除搜索
+    clearEmojiSearch() {
+        this.currentCategory = 'wechat_classic';
+        this.renderEmojiGrid();
+        
+        // 重置分类按钮状态
+        document.querySelectorAll('.emoji-category-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.category === this.currentCategory) {
+                btn.classList.add('active');
+            }
+        });
     }
 
     // 自定义表情相关方法

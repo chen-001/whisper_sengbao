@@ -1235,6 +1235,9 @@ body.forest-theme .room-card:hover {
     background: transparent;
     border: none;
     font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 8px;
     border-radius: 6px;
     cursor: pointer;
@@ -2129,4 +2132,123 @@ body.forest-theme .btn-primary {
 
 body.forest-theme .btn-primary:hover {
     background: #45a049;
-} 
+}
+
+/* 表情图片样式 */
+.emoji-image {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* 表情选择器中的图片表情 */
+.emoji-picker .emoji-image {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* 优化表情分类按钮 */
+.emoji-categories {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.emoji-category-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-category-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.emoji-category-btn.active {
+    background: rgba(102, 126, 234, 0.2);
+    color: var(--text-primary);
+}
+
+body.forest-theme .emoji-category-btn.active {
+    background: rgba(76, 175, 80, 0.2);
+}
+
+/* 表情搜索样式 */
+.emoji-search-container {
+    position: relative;
+    margin-bottom: 12px;
+    padding: 0 12px;
+}
+
+.emoji-search {
+    width: 100%;
+    padding: 8px 32px 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.emoji-search:focus {
+    border-color: rgba(102, 126, 234, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.forest-theme .emoji-search:focus {
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.emoji-search::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* 搜索结果样式 */
+.emoji-no-results {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px 20px;
+    font-size: 14px;
+    grid-column: 1 / -1;
+}

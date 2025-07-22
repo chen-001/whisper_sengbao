@@ -94,15 +94,20 @@
                     <!-- 表情选择器面板 -->
                     <div class="emoji-picker" id="emojiPicker">
                         <div class="emoji-picker-header">
+                            <div class="emoji-search-container">
+                                <input type="text" id="emojiSearch" class="emoji-search" placeholder="搜索表情..." maxlength="20">
+                                <button type="button" id="clearEmojiSearch" class="clear-search-btn" style="display: none;">×</button>
+                            </div>
                             <div class="emoji-categories">
-                                <button class="emoji-category-btn active" data-category="smileys">😀</button>
-                                <button class="emoji-category-btn" data-category="people">👋</button>
-                                <button class="emoji-category-btn" data-category="animals">🐶</button>
-                                <button class="emoji-category-btn" data-category="food">🍎</button>
-                                <button class="emoji-category-btn" data-category="activities">⚽</button>
-                                <button class="emoji-category-btn" data-category="travel">🚗</button>
-                                <button class="emoji-category-btn" data-category="objects">💡</button>
-                                <button class="emoji-category-btn" data-category="symbols">❤️</button>
+                                <button class="emoji-category-btn active" data-category="wechat_classic" title="微信经典">😊</button>
+                                <button class="emoji-category-btn" data-category="wechat_gestures" title="手势表情">👍</button>
+                                <button class="emoji-category-btn" data-category="wechat_chat" title="聊天常用">💬</button>
+                                <button class="emoji-category-btn" data-category="smileys" title="笑脸">😀</button>
+                                <button class="emoji-category-btn" data-category="people" title="人物">👋</button>
+                                <button class="emoji-category-btn" data-category="animals" title="动物">🐶</button>
+                                <button class="emoji-category-btn" data-category="food" title="食物">🍎</button>
+                                <button class="emoji-category-btn" data-category="objects" title="物品">💡</button>
+                                <button class="emoji-category-btn" data-category="symbols" title="符号">❤️</button>
                             </div>
                         </div>
                         <div class="emoji-picker-content">
@@ -194,6 +199,7 @@
             messages: {{ messages | tojson }}
         };
     </script>
+    <script src="/static/emojis/wechat-emojis-data.js"></script>
     <script src="/static/chat.js"></script>
 </body>
 </html> 
