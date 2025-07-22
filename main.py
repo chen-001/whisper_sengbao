@@ -70,12 +70,12 @@ class ConnectionManager:
         self.active_connections[room][user_id] = websocket
         self.users[user_id] = {"username": username, "room": room}
         
-        # 通知房间内其他用户有新用户加入
-        await self.broadcast_to_room(room, {
-            "type": "system",
-            "message": f"{username} 加入了聊天室",
-            "timestamp": None
-        }, exclude_user=user_id)
+        # 通知房间内其他用户有新用户加入（已禁用）
+        # await self.broadcast_to_room(room, {
+        #     "type": "system",
+        #     "message": f"{username} 加入了聊天室",
+        #     "timestamp": None
+        # }, exclude_user=user_id)
     
     def disconnect(self, user_id: str):
         """用户断开连接"""
@@ -91,12 +91,12 @@ class ConnectionManager:
             # 从用户列表中移除
             del self.users[user_id]
             
-            # 通知房间内其他用户有用户离开
-            asyncio.create_task(self.broadcast_to_room(room, {
-                "type": "system", 
-                "message": f"{username} 离开了聊天室",
-                "timestamp": None
-            }))
+            # 通知房间内其他用户有用户离开（已禁用）
+            # asyncio.create_task(self.broadcast_to_room(room, {
+            #     "type": "system", 
+            #     "message": f"{username} 离开了聊天室",
+            #     "timestamp": None
+            # }))
     
     async def send_personal_message(self, message: dict, user_id: str):
         """发送消息给指定用户"""
