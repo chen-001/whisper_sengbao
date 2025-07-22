@@ -681,8 +681,8 @@ class ChatClient {
         // 构建消息内容
         let messageContent = '';
         
-        // 如果有引用消息，显示引用内容
-        if (data.quotedMessage) {
+        // 如果有引用消息，显示引用内容（但排除转发消息）
+        if (data.quotedMessage && data.message_type !== 'forward_group') {
             let quotedContent = '';
             if (data.quotedMessage.message_type === 'image') {
                 quotedContent = `<img src="${data.quotedMessage.file_path}" alt="${this.escapeHtml(data.quotedMessage.message)}" class="quoted-image">`;
