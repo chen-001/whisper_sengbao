@@ -118,6 +118,41 @@ body.forest-theme::before {
     transform: rotate(180deg);
 }
 
+/* 查看更新公告按钮样式 */
+.update-announcement-btn {
+    position: fixed;
+    top: 20px;
+    right: 140px; /* 在主题按钮左侧 */
+    z-index: 1000;
+    background: var(--current-accent);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.update-announcement-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+}
+
+.update-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.update-announcement-btn:hover .update-icon {
+    transform: scale(1.1);
+}
+
 /* 容器样式 */
 .container {
     max-width: 1200px;
@@ -1406,46 +1441,6 @@ body.forest-theme .room-card:hover {
     color: #4caf50;
 }
 
-/* 引用消息样式 */
-.quoted-message {
-    background: rgba(102, 126, 234, 0.1);
-    border-left: 4px solid #667eea;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    border-radius: 0 8px 8px 0;
-    font-size: 0.9em;
-    color: var(--text-secondary);
-    position: relative;
-}
-
-body.forest-theme .quoted-message {
-    background: rgba(76, 175, 80, 0.1);
-    border-left-color: #4caf50;
-}
-
-.quoted-message::before {
-    content: '💬';
-    position: absolute;
-    left: -2px;
-    top: 6px;
-    font-size: 12px;
-}
-
-.quoted-message .quoted-username {
-    font-weight: 600;
-    font-size: 0.8em;
-    color: #667eea;
-    margin-bottom: 2px;
-}
-
-body.forest-theme .quoted-message .quoted-username {
-    color: #4caf50;
-}
-
-.quoted-message .quoted-text {
-    opacity: 0.8;
-    font-style: italic;
-}
 
 /* 消息长按效果 */
 .message.long-pressing {
@@ -1458,40 +1453,6 @@ body.forest-theme .message.long-pressing {
     box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
 }
 
-/* 引用预览样式 */
-.quote-preview {
-    margin-bottom: 10px;
-    position: relative;
-}
-
-.quote-preview .quoted-message {
-    margin-bottom: 0;
-    position: relative;
-    padding-right: 40px;
-}
-
-.clear-quote-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(255,255,255,0.8);
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    z-index: 10;
-}
-
-.clear-quote-btn:hover {
-    background: rgba(255,255,255,1);
-    transform: scale(1.1);
-}
 
 /* 加载更多按钮样式 */
 .load-more-container {
@@ -1572,4 +1533,194 @@ body.forest-theme .load-more-btn:hover {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* 引用功能样式 */
+.message-actions {
+    position: absolute;
+    top: 8px;
+    opacity: 1; /* 常态化显示 */
+    transition: all 0.2s ease;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* 其他人的消息：按钮在右边 */
+.message-other .message-actions {
+    right: 8px;
+}
+
+/* 自己的消息：按钮在左边 */
+.message-user .message-actions {
+    left: 8px;
+}
+
+.quote-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+    pointer-events: all;
+}
+
+.quote-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+body.forest-theme .quote-btn {
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+}
+
+body.forest-theme .quote-btn:hover {
+    background: #4caf50;
+}
+
+/* 引用预览样式 */
+.quote-preview {
+    margin-bottom: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.quoted-message {
+    background: rgba(102, 126, 234, 0.1);
+    border-left: 4px solid #667eea;
+    padding: 12px;
+    border-radius: 0 8px 8px 0;
+    position: relative;
+}
+
+body.forest-theme .quoted-message {
+    background: rgba(76, 175, 80, 0.1);
+    border-left-color: #4caf50;
+}
+
+.quoted-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.quoted-label {
+    font-size: 0.75em;
+    color: #667eea;
+    opacity: 0.8;
+    font-weight: 500;
+}
+
+body.forest-theme .quoted-label {
+    color: #4caf50;
+}
+
+.quoted-username {
+    font-weight: 600;
+    font-size: 0.85em;
+    color: #667eea;
+    flex: 1;
+}
+
+body.forest-theme .quoted-username {
+    color: #4caf50;
+}
+
+.quote-preview .quoted-header {
+    justify-content: space-between;
+}
+
+.quote-preview .quoted-header .clear-quote-btn {
+    margin-left: auto;
+}
+
+.clear-quote-btn {
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #666;
+}
+
+.clear-quote-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+    color: #333;
+}
+
+.quoted-content {
+    font-size: 0.9em;
+    opacity: 0.8;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.quoted-image {
+    max-width: 120px;
+    max-height: 80px;
+    border-radius: 6px;
+    display: block;
+}
+
+/* 消息中的引用样式（已发送消息中显示的引用） */
+.message .quoted-message {
+    margin-bottom: 8px;
+    font-size: 0.85em;
+}
+
+.message .quoted-message .quoted-header {
+    margin-bottom: 4px;
+}
+
+.message .quoted-message .quoted-username {
+    font-size: 0.8em;
+}
+
+.message .quoted-message .quoted-content {
+    font-size: 0.8em;
+}
+
+/* 可点击的引用消息样式 */
+.clickable-quote {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clickable-quote:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+body.forest-theme .clickable-quote:hover {
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+}
+
+/* 消息高亮效果 */
+.message-highlighted {
+    background: rgba(102, 126, 234, 0.15) !important;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+body.forest-theme .message-highlighted {
+    background: rgba(76, 175, 80, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
 } 

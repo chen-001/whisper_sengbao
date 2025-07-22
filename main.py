@@ -306,8 +306,8 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
                     quoted_message = message_data.get("quotedMessage")
                     
                     if message:
-                        # 保存消息到数据库
-                        db.save_message(room_name, username, message, "text")
+                        # 保存消息到数据库（包含引用信息）
+                        db.save_message(room_name, username, message, "text", None, quoted_message)
                         
                         # 构建广播消息
                         broadcast_data = {

@@ -7,7 +7,6 @@ class ChatClient {
         this.userId = null;
         this.roomName = window.chatData.roomName;
         this.isConnected = false;
-        this.quotedMessage = null;
         this.longPressTimer = null;
         this.longPressDelay = 500; // 长按500毫秒触发
         this.hasMoreMessages = true;
@@ -49,6 +48,10 @@ class ChatClient {
         this.uploadFilename = document.getElementById('uploadFilename');
         this.progressFill = document.getElementById('progressFill');
         this.progressText = document.getElementById('progressText');
+        
+        // 引用功能相关
+        this.quotedMessage = null;
+        
         
         // 绑定事件
         this.bindEvents();
@@ -104,9 +107,7 @@ class ChatClient {
         if (this.messageContextMenu) {
             this.messageContextMenu.addEventListener('click', (e) => {
                 const action = e.target.closest('.context-menu-item')?.dataset.action;
-                if (action === 'quote') {
-                    this.handleQuoteMessage();
-                }
+                // 这里暂时只关闭菜单，后续会重新实现引用功能
                 this.hideContextMenu();
             });
         }
@@ -276,7 +277,7 @@ class ChatClient {
             message: message,
             timestamp: new Date().toISOString()
         };
-
+        
         // 如果有引用消息，添加引用信息
         if (this.quotedMessage) {
             messageData.quotedMessage = this.quotedMessage;
@@ -285,7 +286,7 @@ class ChatClient {
         // 发送消息
         this.ws.send(JSON.stringify(messageData));
         
-        // 清空输入框和引用
+        // 清空输入框和引用预览
         this.messageInput.value = '';
         this.clearQuote();
         this.messageInput.focus();
@@ -346,10 +347,20 @@ class ChatClient {
         
         // 如果有引用消息，显示引用内容
         if (data.quotedMessage) {
+            let quotedContent = '';
+            if (data.quotedMessage.message_type === 'image') {
+                quotedContent = `<img src="${data.quotedMessage.file_path}" alt="${this.escapeHtml(data.quotedMessage.message)}" class="quoted-image">`;
+            } else {
+                quotedContent = this.escapeHtml(data.quotedMessage.message);
+            }
+            
             messageContent += `
-                <div class="quoted-message">
-                    <div class="quoted-username">${this.escapeHtml(data.quotedMessage.username)}</div>
-                    <div class="quoted-text">${this.escapeHtml(data.quotedMessage.message)}</div>
+                <div class="quoted-message clickable-quote" data-quoted-id="${data.quotedMessage.id}" onclick="window.chatClient.scrollToMessage('${data.quotedMessage.id}')">
+                    <div class="quoted-header">
+                        <span class="quoted-label">回复</span>
+                        <span class="quoted-username">@${this.escapeHtml(data.quotedMessage.username)}</span>
+                    </div>
+                    <div class="quoted-content">${quotedContent}</div>
                 </div>
             `;
         }
@@ -372,7 +383,29 @@ class ChatClient {
             `;
         }
         
+        // 添加引用按钮容器
+        messageContent += '<div class="message-actions"><button class="quote-btn" title="引用此消息">💬</button></div>';
+        
         messageEl.innerHTML = messageContent;
+        
+        // 绑定引用按钮事件
+        const quoteBtn = messageEl.querySelector('.quote-btn');
+        if (quoteBtn) {
+            // 阻止鼠标事件冒泡到消息元素
+            quoteBtn.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            
+            quoteBtn.addEventListener('mouseup', (e) => {
+                e.stopPropagation();
+            });
+            
+            quoteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleQuoteMessage(data);
+            });
+        }
         
         // 绑定长按事件
         this.bindMessageEvents(messageEl);
@@ -581,50 +614,6 @@ class ChatClient {
         this.selectedMessage = null;
     }
 
-    // 处理引用消息
-    handleQuoteMessage() {
-        if (!this.selectedMessage) return;
-
-        this.quotedMessage = {
-            username: this.selectedMessage.username,
-            message: this.selectedMessage.message
-        };
-
-        // 在输入框上方显示引用预览
-        this.showQuotePreview();
-        
-        // 聚焦到输入框
-        this.messageInput.focus();
-    }
-
-    // 显示引用预览
-    showQuotePreview() {
-        // 移除现有的引用预览
-        this.clearQuote();
-
-        const quotePreview = document.createElement('div');
-        quotePreview.className = 'quote-preview';
-        quotePreview.innerHTML = `
-            <div class="quoted-message">
-                <div class="quoted-username">${this.escapeHtml(this.quotedMessage.username)}</div>
-                <div class="quoted-text">${this.escapeHtml(this.quotedMessage.message)}</div>
-                <button class="clear-quote-btn" onclick="window.chatClient.clearQuote()">✕</button>
-            </div>
-        `;
-
-        // 插入到消息输入容器的开头
-        const inputContainer = document.querySelector('.message-input-container');
-        inputContainer.insertBefore(quotePreview, inputContainer.firstChild);
-    }
-
-    // 清除引用
-    clearQuote() {
-        this.quotedMessage = null;
-        const quotePreview = document.querySelector('.quote-preview');
-        if (quotePreview) {
-            quotePreview.remove();
-        }
-    }
 
     // 检查是否显示加载更多按钮
     checkShowLoadMore(messageCount) {
@@ -1051,6 +1040,116 @@ class ChatClient {
         };
         document.addEventListener('keydown', handleEscKey);
     }
+
+    // 引用功能相关方法
+    handleQuoteMessage(messageData) {
+        // 检查传入的数据
+        if (!messageData || !messageData.username || !messageData.message) {
+            console.error('引用消息数据不完整:', messageData);
+            return;
+        }
+        
+        // 保存被引用的消息信息
+        this.quotedMessage = {
+            id: messageData.id || Date.now(),
+            username: messageData.username,
+            message: messageData.message,
+            message_type: messageData.message_type || 'text',
+            file_path: messageData.file_path
+        };
+
+        // 显示引用预览
+        this.showQuotePreview();
+        
+        // 聚焦到输入框
+        this.messageInput.focus();
+        
+        // 滚动到输入框区域
+        this.messageInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    showQuotePreview() {
+        // 检查是否有引用消息
+        if (!this.quotedMessage) {
+            return;
+        }
+
+        // 只清除现有的DOM元素，不清除quotedMessage数据
+        const existingPreview = document.querySelector('.quote-preview');
+        if (existingPreview) {
+            existingPreview.remove();
+        }
+
+        const quotePreview = document.createElement('div');
+        quotePreview.className = 'quote-preview';
+        
+        let quotedContent = '';
+        if (this.quotedMessage.message_type === 'image') {
+            quotedContent = `<img src="${this.quotedMessage.file_path}" alt="${this.escapeHtml(this.quotedMessage.message)}" class="quoted-image">`;
+        } else {
+            quotedContent = this.escapeHtml(this.quotedMessage.message);
+        }
+        
+        quotePreview.innerHTML = `
+            <div class="quoted-message">
+                <div class="quoted-header">
+                    <span class="quoted-label">回复</span>
+                    <span class="quoted-username">@${this.escapeHtml(this.quotedMessage.username)}</span>
+                    <button class="clear-quote-btn" onclick="window.chatClient.clearQuote()">✕</button>
+                </div>
+                <div class="quoted-content">${quotedContent}</div>
+            </div>
+        `;
+
+        // 简单直接的方法：插入到消息输入框的正上方
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+            // 获取消息输入框的父容器
+            const inputContainer = messageInput.closest('form') || messageInput.parentElement;
+            if (inputContainer && inputContainer.parentElement) {
+                // 在输入容器之前插入引用预览
+                inputContainer.parentElement.insertBefore(quotePreview, inputContainer);
+            } else {
+                // 如果找不到合适位置，就插入到输入框前面
+                messageInput.parentElement.insertBefore(quotePreview, messageInput);
+            }
+        } else {
+            console.error('找不到消息输入框');
+        }
+    }
+
+    clearQuote() {
+        this.quotedMessage = null;
+        const quotePreview = document.querySelector('.quote-preview');
+        if (quotePreview) {
+            quotePreview.remove();
+        }
+    }
+
+    // 跳转到指定消息
+    scrollToMessage(messageId) {
+        const targetMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (targetMessage) {
+            // 平滑滚动到目标消息
+            targetMessage.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center',
+                inline: 'nearest'
+            });
+            
+            // 添加高亮效果
+            targetMessage.classList.add('message-highlighted');
+            
+            // 3秒后移除高亮
+            setTimeout(() => {
+                targetMessage.classList.remove('message-highlighted');
+            }, 3000);
+        } else {
+            console.warn(`找不到ID为${messageId}的消息`);
+            // 可以在这里添加提示，比如"消息不在当前页面，可能需要加载更多历史消息"
+        }
+    }
+
 }
 
 // 页面加载完成后初始化聊天客户端

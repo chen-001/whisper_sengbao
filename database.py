@@ -39,6 +39,9 @@ class ChatDatabase:
         if 'file_path' not in message_columns:
             cursor.execute('ALTER TABLE messages ADD COLUMN file_path TEXT')
             print("数据库迁移：已添加file_path列")
+        if 'quoted_message' not in message_columns:
+            cursor.execute('ALTER TABLE messages ADD COLUMN quoted_message TEXT')
+            print("数据库迁移：已添加quoted_message列")
         
         # 创建消息表
         cursor.execute('''
@@ -144,15 +147,18 @@ class ChatDatabase:
             print(f"更新聊天室密码错误: {e}")
             return False
     
-    def save_message(self, room_name: str, username: str, message: str, message_type: str = "text", file_path: str = None) -> None:
+    def save_message(self, room_name: str, username: str, message: str, message_type: str = "text", file_path: str = None, quoted_message: dict = None) -> None:
         """保存消息到数据库"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
+        # 将引用消息转换为JSON字符串
+        quoted_message_json = json.dumps(quoted_message) if quoted_message else None
+        
         cursor.execute('''
-            INSERT INTO messages (room_name, username, message, message_type, file_path, timestamp) 
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (room_name, username, message, message_type, file_path, datetime.now().isoformat()))
+            INSERT INTO messages (room_name, username, message, message_type, file_path, quoted_message, timestamp) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (room_name, username, message, message_type, file_path, quoted_message_json, datetime.now().isoformat()))
         
         conn.commit()
         conn.close()
@@ -171,7 +177,7 @@ class ChatDatabase:
         if before_timestamp:
             # 分页查询：获取指定时间之前的消息
             cursor.execute('''
-                SELECT id, username, message, timestamp, message_type, file_path 
+                SELECT id, username, message, timestamp, message_type, file_path, quoted_message 
                 FROM messages 
                 WHERE room_name = ? AND timestamp < ?
                 ORDER BY timestamp DESC 
@@ -180,7 +186,7 @@ class ChatDatabase:
         else:
             # 初始查询：获取最新的消息
             cursor.execute('''
-                SELECT id, username, message, timestamp, message_type, file_path 
+                SELECT id, username, message, timestamp, message_type, file_path, quoted_message 
                 FROM messages 
                 WHERE room_name = ? 
                 ORDER BY timestamp DESC 
@@ -189,14 +195,23 @@ class ChatDatabase:
         
         messages = []
         for row in cursor.fetchall():
-            messages.append({
+            message_data = {
                 'id': row[0],
                 'username': row[1],
                 'message': row[2],
                 'timestamp': row[3],
                 'message_type': row[4] or 'text',  # 默认为text类型
                 'file_path': row[5]
-            })
+            }
+            
+            # 解析引用消息JSON
+            if row[6]:  # quoted_message字段
+                try:
+                    message_data['quotedMessage'] = json.loads(row[6])
+                except json.JSONDecodeError:
+                    pass  # 如果JSON解析失败，忽略引用消息
+            
+            messages.append(message_data)
         
         # 按时间正序返回（最早的在前面）
         messages.reverse()

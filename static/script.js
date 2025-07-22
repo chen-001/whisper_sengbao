@@ -49,6 +49,14 @@ document.addEventListener('DOMContentLoaded', function() {
         themeToggle.addEventListener('click', toggleTheme);
     }
 
+    // 查看更新公告按钮处理
+    const updateAnnouncementBtn = document.getElementById('updateAnnouncementBtn');
+    if (updateAnnouncementBtn) {
+        updateAnnouncementBtn.addEventListener('click', () => {
+            showUpdateModalForce(); // 强制显示更新弹窗
+        });
+    }
+
     // 加载保存的主题
     loadTheme();
 
@@ -237,7 +245,7 @@ function loadTheme() {
 
 // 功能更新弹窗相关函数
 function showUpdateModal() {
-    const currentVersion = '2025.07.21.v2'; // 当前版本号
+    const currentVersion = '2025.07.22.v1'; // 当前版本号
     const lastShownVersion = localStorage.getItem('lastShownUpdateVersion');
     const dontShowUpdates = localStorage.getItem('dontShowUpdates') === 'true';
     
