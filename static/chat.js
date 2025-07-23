@@ -1083,11 +1083,6 @@ class ChatClient {
                     // 将新消息插入到现有消息之前
                     this.prependMessages(olderMessages);
                     
-                    // 更新最早时间戳
-                    if (olderMessages.length > 0) {
-                        this.earliestTimestamp = olderMessages[0].timestamp;
-                    }
-                    
                     // 如果返回的消息数量少于请求数量，说明没有更多了
                     if (olderMessages.length < 50) {
                         this.hasMoreMessages = false;
@@ -1126,7 +1121,11 @@ class ChatClient {
             } else {
                 this.messagesContainer.appendChild(messageEl);
             }
-            // 注意：insertPoint保持不变，这样后面的消息会插入到前面消息的后面
+            
+            // 更新最早时间戳
+            if (!this.earliestTimestamp || messageData.timestamp < this.earliestTimestamp) {
+                this.earliestTimestamp = messageData.timestamp;
+            }
         });
 
         // 保持滚动位置（避免跳动）
