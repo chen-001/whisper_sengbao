@@ -306,15 +306,8 @@ async def upload_image(
         with open(file_path, "wb") as f:
             f.write(contents)
         
-        # 保存图片消息到数据库
+        # 生成相对路径（消息将通过WebSocket保存到数据库）
         relative_path = f"/static/uploads/{filename}"
-        db.save_message(
-            room_name=room_name,
-            username=username,
-            message=file.filename,  # 原始文件名作为消息内容
-            message_type="image",
-            file_path=relative_path
-        )
         
         return {
             "status": "success",

@@ -1488,8 +1488,8 @@ class ChatClient {
                         this.ws.send(JSON.stringify({
                             type: 'message',
                             message_type: 'image',
+                            message: response.filename,  // 使用原始文件名作为消息内容
                             file_path: response.file_path,
-                            filename: response.filename,
                             timestamp: new Date().toISOString()
                         }));
                     } else {
