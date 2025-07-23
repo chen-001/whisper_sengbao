@@ -327,11 +327,24 @@ class ChatClient {
     
     // 切换主题
     toggleTheme() {
-        document.body.classList.toggle('forest-theme');
-        const isForest = document.body.classList.contains('forest-theme');
+        const body = document.body;
+        const isForestTheme = body.classList.contains('forest-theme');
+        const isStealTheme = body.classList.contains('steal-theme');
         
-        // 保存主题设置
-        localStorage.setItem('theme', isForest ? 'forest' : 'dream');
+        if (isForestTheme) {
+            // 森林 -> 偷感
+            body.classList.remove('forest-theme');
+            body.classList.add('steal-theme');
+            localStorage.setItem('theme', 'steal');
+        } else if (isStealTheme) {
+            // 偷感 -> 梦幻
+            body.classList.remove('steal-theme');
+            localStorage.setItem('theme', 'dream');
+        } else {
+            // 梦幻 -> 森林
+            body.classList.add('forest-theme');
+            localStorage.setItem('theme', 'forest');
+        }
         
         this.updateThemeDisplay();
     }
@@ -339,8 +352,15 @@ class ChatClient {
     // 更新主题显示
     updateThemeDisplay() {
         const isForest = document.body.classList.contains('forest-theme');
+        const isSteal = document.body.classList.contains('steal-theme');
         if (this.themeValue) {
-            this.themeValue.textContent = isForest ? '梦幻' : '森林';
+            if (isForest) {
+                this.themeValue.textContent = '偷感';
+            } else if (isSteal) {
+                this.themeValue.textContent = '梦幻';
+            } else {
+                this.themeValue.textContent = '森林';
+            }
         }
     }
     
@@ -388,6 +408,21 @@ class ChatClient {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendMessage();
+            }
+        });
+
+        // 添加粘贴事件监听器支持图片粘贴
+        this.messageInput.addEventListener('paste', (e) => {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    if (file) {
+                        this.uploadImage(file);
+                    }
+                    break;
+                }
             }
         });
 
@@ -449,6 +484,27 @@ class ChatClient {
                 e.target.value = '';
             });
         }
+
+        // 全局粘贴事件监听器，支持在聊天界面任何地方粘贴图片
+        document.addEventListener('paste', (e) => {
+            // 如果焦点在输入框或其他需要文本粘贴的元素上，不处理
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.contentEditable === 'true')) {
+                return; // 让输入框自己处理粘贴事件
+            }
+            
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    if (file) {
+                        this.uploadImage(file);
+                    }
+                    break;
+                }
+            }
+        });
 
         // 自定义表情事件
         if (this.customEmojiButton) {
@@ -818,16 +874,26 @@ class ChatClient {
     toggleTheme() {
         const body = document.body;
         const isForestTheme = body.classList.contains('forest-theme');
+        const isStealTheme = body.classList.contains('steal-theme');
         
         if (isForestTheme) {
+            // 森林 -> 偷感
             body.classList.remove('forest-theme');
+            body.classList.add('steal-theme');
+            this.themeToggle.querySelector('.theme-toggle-icon').textContent = '⚪';
+            this.themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+            localStorage.setItem('chatTheme', 'steal');
+        } else if (isStealTheme) {
+            // 偷感 -> 梦幻
+            body.classList.remove('steal-theme');
             this.themeToggle.querySelector('.theme-toggle-icon').textContent = '🌸';
             this.themeToggle.querySelector('.theme-toggle-text').textContent = '森林';
             localStorage.setItem('chatTheme', 'dreamy');
         } else {
+            // 梦幻 -> 森林
             body.classList.add('forest-theme');
             this.themeToggle.querySelector('.theme-toggle-icon').textContent = '🌳';
-            this.themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+            this.themeToggle.querySelector('.theme-toggle-text').textContent = '偷感';
             localStorage.setItem('chatTheme', 'forest');
         }
     }
@@ -839,7 +905,19 @@ class ChatClient {
             document.body.classList.add('forest-theme');
             if (this.themeToggle) {
                 this.themeToggle.querySelector('.theme-toggle-icon').textContent = '🌳';
+                this.themeToggle.querySelector('.theme-toggle-text').textContent = '偷感';
+            }
+        } else if (savedTheme === 'steal') {
+            document.body.classList.add('steal-theme');
+            if (this.themeToggle) {
+                this.themeToggle.querySelector('.theme-toggle-icon').textContent = '⚪';
                 this.themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+            }
+        } else {
+            // 默认梦幻主题
+            if (this.themeToggle) {
+                this.themeToggle.querySelector('.theme-toggle-icon').textContent = '🌸';
+                this.themeToggle.querySelector('.theme-toggle-text').textContent = '森林';
             }
         }
     }

@@ -234,16 +234,26 @@ function toggleTheme() {
     const body = document.body;
     const themeToggle = document.getElementById('themeToggle');
     const isForestTheme = body.classList.contains('forest-theme');
+    const isStealTheme = body.classList.contains('steal-theme');
     
     if (isForestTheme) {
+        // 森林 -> 偷感
         body.classList.remove('forest-theme');
+        body.classList.add('steal-theme');
+        themeToggle.querySelector('.theme-toggle-icon').textContent = '⚪';
+        themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+        localStorage.setItem('chatTheme', 'steal');
+    } else if (isStealTheme) {
+        // 偷感 -> 梦幻
+        body.classList.remove('steal-theme');
         themeToggle.querySelector('.theme-toggle-icon').textContent = '🌸';
         themeToggle.querySelector('.theme-toggle-text').textContent = '森林';
         localStorage.setItem('chatTheme', 'dreamy');
     } else {
+        // 梦幻 -> 森林
         body.classList.add('forest-theme');
         themeToggle.querySelector('.theme-toggle-icon').textContent = '🌳';
-        themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+        themeToggle.querySelector('.theme-toggle-text').textContent = '偷感';
         localStorage.setItem('chatTheme', 'forest');
     }
 }
@@ -257,14 +267,26 @@ function loadTheme() {
         document.body.classList.add('forest-theme');
         if (themeToggle) {
             themeToggle.querySelector('.theme-toggle-icon').textContent = '🌳';
+            themeToggle.querySelector('.theme-toggle-text').textContent = '偷感';
+        }
+    } else if (savedTheme === 'steal') {
+        document.body.classList.add('steal-theme');
+        if (themeToggle) {
+            themeToggle.querySelector('.theme-toggle-icon').textContent = '⚪';
             themeToggle.querySelector('.theme-toggle-text').textContent = '梦幻';
+        }
+    } else {
+        // 默认梦幻主题
+        if (themeToggle) {
+            themeToggle.querySelector('.theme-toggle-icon').textContent = '🌸';
+            themeToggle.querySelector('.theme-toggle-text').textContent = '森林';
         }
     }
 }
 
 // 功能更新弹窗相关函数
 function showUpdateModal() {
-    const currentVersion = '2025.07.22.v1'; // 当前版本号
+    const currentVersion = '2025.07.23.v2'; // 当前版本号
     const lastShownVersion = localStorage.getItem('lastShownUpdateVersion');
     const dontShowUpdates = localStorage.getItem('dontShowUpdates') === 'true';
     

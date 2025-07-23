@@ -20,6 +20,13 @@
     --forest-background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%);
     --forest-card: linear-gradient(135deg, rgba(232,245,233,0.9) 0%, rgba(200,230,201,0.8) 100%);
     
+    /* 偷感主题色彩 - 护眼的淡黄色调 */
+    --steal-primary: linear-gradient(135deg, #faf8f0 0%, #f0ead6 100%);
+    --steal-secondary: linear-gradient(135deg, #f5f1e8 0%, #ebe4d1 100%);
+    --steal-accent: linear-gradient(135deg, #fefcf3 0%, #f8f4e6 100%);
+    --steal-background: linear-gradient(135deg, #fefcf6 0%, #faf6ed 50%, #f5f1e8 100%);
+    --steal-card: linear-gradient(135deg, rgba(254,252,246,0.95) 0%, rgba(250,246,237,0.9) 100%);
+    
     /* 当前使用的主题（默认梦幻） */
     --current-primary: var(--primary-gradient);
     --current-secondary: var(--secondary-gradient);
@@ -40,6 +47,20 @@ body.forest-theme {
     --current-accent: var(--forest-accent);
     --current-background: var(--forest-background);
     --current-card: var(--forest-card);
+}
+
+/* 偷感主题 */
+body.steal-theme {
+    --current-primary: var(--steal-primary);
+    --current-secondary: var(--steal-secondary);
+    --current-accent: var(--steal-accent);
+    --current-background: var(--steal-background);
+    --current-card: var(--steal-card);
+    
+    /* 偷感主题专用文字颜色 - 使用深色文字 */
+    --text-primary: #1a202c;
+    --text-secondary: #2d3748;
+    --text-light: #4a5568;
 }
 
 body {
@@ -72,6 +93,13 @@ body.forest-theme::before {
         radial-gradient(circle at 20% 80%, rgba(76, 175, 80, 0.2) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(139, 195, 74, 0.2) 0%, transparent 50%),
         radial-gradient(circle at 40% 40%, rgba(46, 125, 50, 0.3) 0%, transparent 50%);
+}
+
+body.steal-theme::before {
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(250, 246, 237, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(248, 244, 230, 0.4) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(245, 241, 232, 0.2) 0%, transparent 50%);
 }
 
 @keyframes backgroundShift {
@@ -344,6 +372,10 @@ body.forest-theme::before {
     font-weight: 600;
 }
 
+body.steal-theme .update-announcement-btn {
+    color: #1a202c;
+}
+
 .update-announcement-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(0,0,0,0.2);
@@ -372,6 +404,10 @@ body.forest-theme::before {
     color: white;
 }
 
+body.steal-theme .header {
+    color: #1a202c;
+}
+
 .header h1 {
     font-size: 2.5rem;
     margin-bottom: 10px;
@@ -381,6 +417,14 @@ body.forest-theme::before {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: shimmer 3s ease-in-out infinite alternate;
+}
+
+body.steal-theme .header h1 {
+    background: linear-gradient(45deg, #1a202c, #2d3748);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
 }
 
 @keyframes shimmer {
@@ -503,6 +547,13 @@ body.forest-theme::before {
     font-size: 28px;
     margin-bottom: 10px;
     background: var(--current-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body.steal-theme .update-header h2 {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -697,6 +748,10 @@ body.forest-theme::before {
 
 body.forest-theme .btn-primary:hover {
     box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+}
+
+body.steal-theme .btn-primary:hover {
+    box-shadow: 0 8px 25px rgba(74, 85, 104, 0.4);
 }
 
 .btn-secondary {
@@ -904,6 +959,10 @@ body.forest-theme .room-card:hover {
     z-index: 10;
 }
 
+body.steal-theme .chat-header {
+    color: #1a202c;
+}
+
 .chat-title h1 {
     font-size: 1.5rem;
     margin-bottom: 5px;
@@ -914,6 +973,10 @@ body.forest-theme .room-card:hover {
     text-decoration: none;
     opacity: 0.9;
     font-size: 0.9rem;
+}
+
+body.steal-theme .back-btn {
+    color: #1a202c;
 }
 
 .back-btn:hover {
@@ -1020,6 +1083,10 @@ body.forest-theme .room-card:hover {
     margin-left: auto;
     text-align: right;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+body.steal-theme .message-user {
+    color: #1a202c;
 }
 
 .message-other {
@@ -1429,6 +1496,10 @@ body.forest-theme .room-card:hover {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
+body.steal-theme .message-form button {
+    color: #1a202c;
+}
+
 .message-form button:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
@@ -1762,6 +1833,11 @@ body.forest-theme .quoted-message {
     border-left-color: #4caf50;
 }
 
+body.steal-theme .quoted-message {
+    background: rgba(45, 55, 72, 0.05);
+    border-left-color: #2d3748;
+}
+
 .quoted-header {
     display: flex;
     align-items: center;
@@ -1780,6 +1856,10 @@ body.forest-theme .quoted-label {
     color: #4caf50;
 }
 
+body.steal-theme .quoted-label {
+    color: #2d3748;
+}
+
 .quoted-username {
     font-weight: 600;
     font-size: 0.85em;
@@ -1789,6 +1869,10 @@ body.forest-theme .quoted-label {
 
 body.forest-theme .quoted-username {
     color: #4caf50;
+}
+
+body.steal-theme .quoted-username {
+    color: #2d3748;
 }
 
 .quote-preview .quoted-header {
@@ -2286,6 +2370,16 @@ body.forest-theme .btn-primary {
 
 body.forest-theme .btn-primary:hover {
     background: #45a049;
+}
+
+body.steal-theme .btn-primary {
+    background: #4a5568;
+    color: white;
+}
+
+body.steal-theme .btn-primary:hover {
+    background: #2d3748;
+    box-shadow: 0 8px 25px rgba(74, 85, 104, 0.4);
 }
 
 /* 表情图片样式 */
