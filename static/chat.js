@@ -15,6 +15,8 @@ class ChatClient {
         this.earliestTimestamp = null;
         this.notificationsEnabled = false;
         this.isPageVisible = true;
+        this.isMiniMode = true; // 默认启动为迷你模式
+        this.isFullscreen = false;
         
         this.init();
     }
@@ -71,6 +73,41 @@ class ChatClient {
         this.progressFill = document.getElementById('progressFill');
         this.progressText = document.getElementById('progressText');
         
+        // 迷你模式相关元素
+        this.disguiseContainer = document.getElementById('disguiseContainer');
+        this.disguiseFrame = document.getElementById('disguiseFrame');
+        this.disguiseSettings = document.getElementById('disguiseSettings');
+        this.miniChatControls = document.getElementById('miniChatControls');
+        this.toggleChatBtn = document.getElementById('toggleChatBtn');
+        this.settingsBtn = document.getElementById('settingsBtn');
+        this.fullscreenBtn = document.getElementById('fullscreenBtn');
+        this.chatContainer = document.getElementById('chatContainer');
+        this.miniChatWindow = document.getElementById('miniChatWindow');
+        this.miniMessagesContainer = document.getElementById('miniMessagesContainer');
+        this.miniMessageInput = document.getElementById('miniMessageInput');
+        this.miniSendBtn = document.getElementById('miniSendBtn');
+        this.miniConnectionStatus = document.getElementById('miniConnectionStatus');
+        this.miniUserCount = document.getElementById('miniUserCount');
+        this.miniFullscreenBtn = document.getElementById('miniFullscreenBtn');
+        this.miniHideBtn = document.getElementById('miniHideBtn');
+        this.presetUrls = document.getElementById('presetUrls');
+        this.customUrl = document.getElementById('customUrl');
+        this.customUrlGroup = document.getElementById('customUrlGroup');
+        this.applyDisguiseBtn = document.getElementById('applyDisguiseBtn');
+        this.closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        this.miniModeToggleItem = document.getElementById('miniModeToggleItem');
+        
+        // 迷你窗口功能元素
+        this.miniEmojiButton = document.getElementById('miniEmojiButton');
+        this.miniEmojiPicker = document.getElementById('miniEmojiPicker');
+        this.miniEmojiGrid = document.getElementById('miniEmojiGrid');
+        this.miniCustomEmojiButton = document.getElementById('miniCustomEmojiButton');
+        this.miniCustomEmojiPicker = document.getElementById('miniCustomEmojiPicker');
+        this.miniCustomEmojiGrid = document.getElementById('miniCustomEmojiGrid');
+        this.miniImageButton = document.getElementById('miniImageButton');
+        this.miniImageInput = document.getElementById('miniImageInput');
+        this.miniCustomEmojiInput = document.getElementById('miniCustomEmojiInput');
+        
         // 引用功能相关
         this.quotedMessage = null;
         
@@ -99,8 +136,20 @@ class ChatClient {
         // 初始化转发功能
         this.initForward();
         
+        // 初始化迷你模式
+        this.initMiniMode();
+        
+        // 初始化快捷键
+        this.initKeyboardShortcuts();
+        
+        // 加载显示设置
+        this.loadDisplaySettings();
+        
         // 初始化功能菜单
         this.initFunctionMenu();
+        
+        // 显示初始消息
+        this.displayInitialMessages();
         
         // 检查是否需要设置用户名
         this.checkUsernameRequirement();
@@ -142,6 +191,31 @@ class ChatClient {
         if (savedUsername && this.messageInput && this.sendButton) {
             this.messageInput.disabled = false;
             this.sendButton.disabled = false;
+            
+            // 同时启用迷你窗口输入
+            if (this.miniMessageInput) {
+                this.miniMessageInput.disabled = false;
+            }
+            if (this.miniSendBtn) {
+                this.miniSendBtn.disabled = false;
+            }
+            if (this.miniEmojiButton) {
+                this.miniEmojiButton.disabled = false;
+            }
+            if (this.miniCustomEmojiButton) {
+                this.miniCustomEmojiButton.disabled = false;
+            }
+            if (this.miniImageButton) {
+                this.miniImageButton.disabled = false;
+            }
+        }
+    }
+    
+    // 显示初始消息
+    displayInitialMessages() {
+        if (window.chatData && window.chatData.messages && window.chatData.messages.length > 0) {
+            console.log('显示初始消息，数量:', window.chatData.messages.length);
+            this.displayHistoryMessages(window.chatData.messages);
         }
     }
     
@@ -485,6 +559,7 @@ class ChatClient {
             });
         }
 
+
         // 全局粘贴事件监听器，支持在聊天界面任何地方粘贴图片
         document.addEventListener('paste', (e) => {
             // 如果焦点在输入框或其他需要文本粘贴的元素上，不处理
@@ -588,6 +663,23 @@ class ChatClient {
                 this.customEmojiButton.disabled = false;
                 this.imageButton.disabled = false;
                 this.messageInput.focus();
+                
+                // 启用迷你窗口输入
+                if (this.miniMessageInput) {
+                    this.miniMessageInput.disabled = false;
+                }
+                if (this.miniSendBtn) {
+                    this.miniSendBtn.disabled = false;
+                }
+                if (this.miniEmojiButton) {
+                    this.miniEmojiButton.disabled = false;
+                }
+                if (this.miniCustomEmojiButton) {
+                    this.miniCustomEmojiButton.disabled = false;
+                }
+                if (this.miniImageButton) {
+                    this.miniImageButton.disabled = false;
+                }
             };
             
             this.ws.onmessage = (event) => {
@@ -604,6 +696,23 @@ class ChatClient {
                 this.messageInput.disabled = true;
                 this.sendButton.disabled = true;
                 this.emojiButton.disabled = true;
+                
+                // 禁用迷你窗口输入
+                if (this.miniMessageInput) {
+                    this.miniMessageInput.disabled = true;
+                }
+                if (this.miniSendBtn) {
+                    this.miniSendBtn.disabled = true;
+                }
+                if (this.miniEmojiButton) {
+                    this.miniEmojiButton.disabled = true;
+                }
+                if (this.miniCustomEmojiButton) {
+                    this.miniCustomEmojiButton.disabled = true;
+                }
+                if (this.miniImageButton) {
+                    this.miniImageButton.disabled = true;
+                }
                 
                 // 尝试重连
                 setTimeout(() => {
@@ -628,6 +737,15 @@ class ChatClient {
         switch (data.type) {
             case 'message':
                 this.displayMessage(data);
+                // 新消息也在迷你窗口显示
+                if (this.miniMessagesContainer) {
+                    // 确保消息数据包含正确的用户标识
+                    const messageForMini = {
+                        ...data,
+                        userId: data.userId || (data.username === this.username ? this.userId : 'other')
+                    };
+                    this.displayMiniMessage(messageForMini);
+                }
                 // 如果不是自己发送的消息且页面不在前台，发送通知
                 if (data.username !== this.username && this.notificationsEnabled && !this.isPageVisible) {
                     this.showNotification(data.username, data.message);
@@ -638,6 +756,7 @@ class ChatClient {
                 break;
             case 'user_list':
                 this.updateUsersList(data.users);
+                this.updateMiniStatus(this.isConnected ? '已连接' : '连接中...', data.users.length);
                 break;
             case 'history':
                 this.displayHistoryMessages(data.messages);
@@ -707,6 +826,9 @@ class ChatClient {
                 this.earliestTimestamp = messageData.timestamp;
             }
         });
+        
+        // 同步历史消息到迷你窗口
+        this.syncMessagesToMiniWindow();
         
         // 检查是否需要显示加载更多按钮
         this.checkShowLoadMore(messages.length);
@@ -839,6 +961,9 @@ class ChatClient {
     updateConnectionStatus(status, isConnected) {
         this.connectionStatus.textContent = status;
         this.connectionStatus.className = `status-indicator ${isConnected ? 'status-connected' : 'status-disconnected'}`;
+        
+        // 同时更新迷你窗口状态
+        this.updateMiniStatus(status, 0);
     }
     
     scrollToBottom() {
@@ -2735,6 +2860,10 @@ class ChatClient {
             
             if (data.status === 'success') {
                 this.loadCustomEmojis(); // 刷新列表
+                // 同时刷新迷你窗口的表情列表
+                if (window.chatClient && window.chatClient.loadMiniCustomEmojis) {
+                    window.chatClient.loadMiniCustomEmojis();
+                }
             } else {
                 alert(data.message);
             }
@@ -2804,6 +2933,772 @@ function handleCustomEmojiFileSelect(file) {
     reader.readAsDataURL(file);
 }
 
+// 在ChatClient类中添加新方法
+ChatClient.prototype.initMiniMode = function() {
+    // 设置初始显示状态
+    this.updateMiniModeDisplay();
+    
+    // 绑定控制按钮事件
+    this.toggleChatBtn?.addEventListener('click', () => {
+        this.toggleMiniChat();
+    });
+    
+    this.settingsBtn?.addEventListener('click', () => {
+        this.showDisguiseSettings();
+    });
+    
+    this.fullscreenBtn?.addEventListener('click', () => {
+        this.toggleFullscreen();
+    });
+    
+    // 迷你窗口控制按钮
+    this.miniFullscreenBtn?.addEventListener('click', () => {
+        this.toggleFullscreen();
+    });
+    
+    this.miniHideBtn?.addEventListener('click', () => {
+        this.hideMiniChat();
+    });
+    
+    // 迷你发送按钮
+    this.miniSendBtn?.addEventListener('click', () => {
+        this.sendMiniMessage();
+    });
+    
+    // 迷你输入框回车发送
+    this.miniMessageInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.sendMiniMessage();
+        }
+    });
+    
+    // 伪装设置事件
+    this.presetUrls?.addEventListener('change', () => {
+        this.handlePresetUrlChange();
+    });
+    
+    this.applyDisguiseBtn?.addEventListener('click', () => {
+        this.applyDisguise();
+    });
+    
+    this.closeSettingsBtn?.addEventListener('click', () => {
+        this.hideDisguiseSettings();
+    });
+    
+    // 全屏模式下的迷你模式切换按钮
+    this.miniModeToggleItem?.addEventListener('click', () => {
+        this.toggleFullscreen(); // 从全屏切换到迷你模式
+    });
+    
+    // 迷你窗口表情按钮
+    this.miniEmojiButton?.addEventListener('click', () => {
+        this.toggleMiniEmojiPicker();
+    });
+    
+    // 迷你窗口自定义表情按钮
+    this.miniCustomEmojiButton?.addEventListener('click', () => {
+        this.toggleMiniCustomEmojiPicker();
+    });
+    
+    // 迷你窗口上传表情按钮
+    const miniUploadEmojiBtn = document.getElementById('miniUploadEmojiBtn');
+    miniUploadEmojiBtn?.addEventListener('click', () => {
+        // 触发全屏版本的上传功能
+        const uploadEmojiBtn = document.getElementById('uploadEmojiBtn');
+        if (uploadEmojiBtn) {
+            uploadEmojiBtn.click();
+        }
+    });
+    
+    // 迷你表情类别切换按钮
+    const miniEmojiCategoryBtns = document.querySelectorAll('.mini-emoji-category-btn');
+    console.log('找到迷你表情类别按钮数量:', miniEmojiCategoryBtns.length);
+    miniEmojiCategoryBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('点击了类别按钮:', btn.dataset.category);
+            // 移除所有按钮的active类
+            miniEmojiCategoryBtns.forEach(b => b.classList.remove('active'));
+            // 给当前按钮添加active类
+            btn.classList.add('active');
+            // 重新加载表情
+            this.loadMiniEmojis();
+        });
+    });
+    
+    // 迷你窗口图片按钮
+    this.miniImageButton?.addEventListener('click', () => {
+        this.miniImageInput?.click();
+    });
+    
+    // 迷你窗口图片输入
+    this.miniImageInput?.addEventListener('change', (e) => {
+        this.handleMiniImageUpload(e);
+    });
+    
+    // 点击其他地方关闭表情选择器
+    document.addEventListener('click', (e) => {
+        if (!this.miniEmojiButton?.contains(e.target) && !this.miniEmojiPicker?.contains(e.target)) {
+            this.miniEmojiPicker.style.display = 'none';
+        }
+        if (!this.miniCustomEmojiButton?.contains(e.target) && !this.miniCustomEmojiPicker?.contains(e.target)) {
+            this.miniCustomEmojiPicker.style.display = 'none';
+        }
+    });
+    
+    // 加载保存的伪装设置
+    this.loadDisguiseSettings();
+};
+
+// 初始化快捷键
+ChatClient.prototype.initKeyboardShortcuts = function() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+Shift+H: 隐藏/显示聊天窗口
+        if (e.ctrlKey && e.shiftKey && e.key === 'H') {
+            e.preventDefault();
+            this.toggleMiniChat();
+        }
+        
+        // Ctrl+Shift+F: 全屏模式切换
+        if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+            e.preventDefault();
+            this.toggleFullscreen();
+        }
+        
+        // Ctrl+Shift+S: 显示伪装设置
+        if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+            e.preventDefault();
+            this.showDisguiseSettings();
+        }
+        
+        // ESC: 紧急隐藏所有聊天相关界面
+        if (e.key === 'Escape') {
+            this.emergencyHide();
+        }
+    });
+};
+
+// 更新迷你模式显示状态
+ChatClient.prototype.updateMiniModeDisplay = function() {
+    if (this.isFullscreen) {
+        // 全屏模式
+        document.body.classList.add('fullscreen-chat');
+        this.disguiseContainer.style.display = 'none';
+        this.miniChatControls.style.display = 'none';
+        this.miniChatWindow.style.display = 'none';
+        this.chatContainer.style.display = 'block';
+    } else if (this.isMiniMode) {
+        // 迷你模式
+        document.body.classList.remove('fullscreen-chat');
+        this.disguiseContainer.style.display = 'block';
+        this.miniChatControls.style.display = 'flex';
+        this.miniChatWindow.style.display = 'block';
+        this.chatContainer.style.display = 'none';
+        
+        // 切换到迷你模式时同步消息
+        this.syncMessagesToMiniWindow();
+    } else {
+        // 隐藏聊天模式
+        document.body.classList.remove('fullscreen-chat');
+        this.disguiseContainer.style.display = 'block';
+        this.miniChatControls.style.display = 'flex';
+        this.miniChatWindow.style.display = 'none';
+        this.chatContainer.style.display = 'none';
+    }
+};
+
+// 切换迷你聊天窗口显示
+ChatClient.prototype.toggleMiniChat = function() {
+    if (this.isFullscreen) {
+        this.isFullscreen = false;
+        this.isMiniMode = true;
+    } else {
+        this.isMiniMode = !this.isMiniMode;
+    }
+    this.updateMiniModeDisplay();
+    this.saveDisplaySettings();
+};
+
+// 隐藏迷你聊天窗口
+ChatClient.prototype.hideMiniChat = function() {
+    this.isMiniMode = false;
+    this.updateMiniModeDisplay();
+    this.saveDisplaySettings();
+};
+
+// 切换全屏模式
+ChatClient.prototype.toggleFullscreen = function() {
+    this.isFullscreen = !this.isFullscreen;
+    if (this.isFullscreen) {
+        this.isMiniMode = false;
+    } else {
+        this.isMiniMode = true;
+    }
+    this.updateMiniModeDisplay();
+    this.saveDisplaySettings();
+};
+
+// 紧急隐藏功能
+ChatClient.prototype.emergencyHide = function() {
+    this.isFullscreen = false;
+    this.isMiniMode = false;
+    this.hideDisguiseSettings();
+    this.updateMiniModeDisplay();
+};
+
+// 显示伪装设置
+ChatClient.prototype.showDisguiseSettings = function() {
+    this.disguiseSettings.style.display = 'block';
+};
+
+// 隐藏伪装设置
+ChatClient.prototype.hideDisguiseSettings = function() {
+    this.disguiseSettings.style.display = 'none';
+};
+
+// 处理预设URL变化
+ChatClient.prototype.handlePresetUrlChange = function() {
+    const selected = this.presetUrls.value;
+    if (selected === 'custom') {
+        this.customUrlGroup.style.display = 'block';
+    } else {
+        this.customUrlGroup.style.display = 'none';
+    }
+};
+
+// 应用伪装
+ChatClient.prototype.applyDisguise = function() {
+    let url;
+    if (this.presetUrls.value === 'custom') {
+        url = this.customUrl.value.trim();
+        if (!url) {
+            alert('请输入自定义网址');
+            return;
+        }
+    } else {
+        url = this.presetUrls.value;
+    }
+    
+    this.disguiseFrame.src = url;
+    this.hideDisguiseSettings();
+    this.saveDisguiseSettings();
+};
+
+// 保存伪装设置
+ChatClient.prototype.saveDisguiseSettings = function() {
+    const settings = {
+        presetUrl: this.presetUrls.value,
+        customUrl: this.customUrl.value,
+        currentUrl: this.disguiseFrame.src
+    };
+    localStorage.setItem('disguiseSettings', JSON.stringify(settings));
+};
+
+// 加载伪装设置
+ChatClient.prototype.loadDisguiseSettings = function() {
+    const saved = localStorage.getItem('disguiseSettings');
+    if (saved) {
+        try {
+            const settings = JSON.parse(saved);
+            this.presetUrls.value = settings.presetUrl || 'https://zhuanlan.zhihu.com/p/376563247';
+            this.customUrl.value = settings.customUrl || '';
+            if (settings.currentUrl) {
+                this.disguiseFrame.src = settings.currentUrl;
+            }
+            this.handlePresetUrlChange();
+        } catch (e) {
+            console.log('加载伪装设置失败:', e);
+        }
+    }
+};
+
+// 保存显示设置
+ChatClient.prototype.saveDisplaySettings = function() {
+    const settings = {
+        isMiniMode: this.isMiniMode,
+        isFullscreen: this.isFullscreen
+    };
+    localStorage.setItem('displaySettings', JSON.stringify(settings));
+};
+
+// 加载显示设置
+ChatClient.prototype.loadDisplaySettings = function() {
+    const saved = localStorage.getItem('displaySettings');
+    if (saved) {
+        try {
+            const settings = JSON.parse(saved);
+            this.isMiniMode = settings.isMiniMode !== false; // 默认true
+            this.isFullscreen = settings.isFullscreen || false;
+            this.updateMiniModeDisplay();
+        } catch (e) {
+            console.log('加载显示设置失败:', e);
+        }
+    }
+};
+
+// 发送迷你消息
+ChatClient.prototype.sendMiniMessage = function() {
+    const message = this.miniMessageInput.value.trim();
+    if (!message || !this.isConnected) return;
+    
+    // 复用原有发送逻辑
+    this.ws.send(JSON.stringify({
+        type: 'message',
+        message: message,
+        username: this.username,
+        userId: this.userId,
+        timestamp: new Date().toISOString()
+    }));
+    
+    this.miniMessageInput.value = '';
+};
+
+// 在迷你窗口中显示消息
+ChatClient.prototype.displayMiniMessage = function(messageData) {
+    if (!this.miniMessagesContainer) {
+        console.log('displayMiniMessage: 迷你消息容器不存在');
+        return;
+    }
+    
+    // console.log('显示迷你消息:', messageData);
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'mini-message';
+    messageDiv.dataset.timestamp = messageData.timestamp;
+    
+    // 判断是否为自己的消息
+    if (messageData.userId === this.userId || messageData.username === this.username) {
+        messageDiv.classList.add('own');
+    }
+    
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'mini-message-header';
+    // 简化时间显示，使用简单的时间格式
+    let timeStr;
+    try {
+        if (this.formatTime && messageData.timestamp) {
+            timeStr = this.formatTime(messageData.timestamp);
+        } else {
+            const date = new Date(messageData.timestamp || new Date());
+            timeStr = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+    } catch (error) {
+        timeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    }
+    headerDiv.textContent = `${messageData.username} • ${timeStr}`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'mini-message-content';
+    
+    // 处理不同类型的消息内容
+    if (messageData.message_type === 'image') {
+        const img = document.createElement('img');
+        // 如果有file_path，说明是自定义表情，使用file_path
+        // 否则是普通图片，使用message
+        img.src = messageData.file_path || messageData.message;
+        
+        // 根据是否有file_path判断是否为自定义表情
+        if (messageData.file_path) {
+            // 自定义表情样式
+            img.className = 'mini-custom-emoji';
+            img.style.width = '32px';
+            img.style.height = '32px';
+            img.style.borderRadius = '4px';
+        } else {
+            // 普通图片样式
+            img.className = 'mini-message-image';
+            img.style.maxWidth = '200px';
+            img.style.maxHeight = '150px';
+            img.style.borderRadius = '4px';
+        }
+        contentDiv.appendChild(img);
+    } else if (messageData.message_type === 'custom_emoji') {
+        const img = document.createElement('img');
+        img.src = messageData.message;
+        img.className = 'mini-custom-emoji';
+        img.style.width = '32px';
+        img.style.height = '32px';
+        contentDiv.appendChild(img);
+    } else {
+        // 处理文本消息和表情
+        const messageText = messageData.message || '';
+        contentDiv.innerHTML = this.processMessageContent ? this.processMessageContent(messageText) : messageText;
+    }
+    
+    messageDiv.appendChild(headerDiv);
+    messageDiv.appendChild(contentDiv);
+    
+    // 添加右键菜单和长按事件
+    this.addMiniMessageEvents(messageDiv, messageData);
+    
+    // 按时间戳顺序插入消息
+    this.insertMiniMessageInOrder(messageDiv, messageData.timestamp);
+    
+    // 限制消息数量
+    const messages = this.miniMessagesContainer.querySelectorAll('.mini-message');
+    if (messages.length > 100) {
+        messages[0].remove();
+    }
+    
+    // console.log('迷你窗口当前消息数量:', messages.length);
+    
+    // 滚动到底部
+    setTimeout(() => {
+        this.miniMessagesContainer.scrollTop = this.miniMessagesContainer.scrollHeight;
+    }, 10);
+};
+
+// 按时间戳顺序插入迷你消息
+ChatClient.prototype.insertMiniMessageInOrder = function(messageDiv, timestamp) {
+    const messages = this.miniMessagesContainer.querySelectorAll('.mini-message');
+    let inserted = false;
+    
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const existingTimestamp = messages[i].dataset.timestamp;
+        if (timestamp >= existingTimestamp) {
+            messages[i].insertAdjacentElement('afterend', messageDiv);
+            inserted = true;
+            break;
+        }
+    }
+    
+    if (!inserted) {
+        this.miniMessagesContainer.insertBefore(messageDiv, this.miniMessagesContainer.firstChild);
+    }
+};
+
+// 更新迷你窗口状态
+ChatClient.prototype.updateMiniStatus = function(status, userCount = 0) {
+    if (this.miniConnectionStatus) {
+        this.miniConnectionStatus.textContent = status;
+    }
+    if (this.miniUserCount) {
+        this.miniUserCount.textContent = `${userCount}人在线`;
+    }
+};
+
+// 切换迷你表情选择器
+ChatClient.prototype.toggleMiniEmojiPicker = function() {
+    if (!this.miniEmojiPicker) return;
+    
+    if (this.miniEmojiPicker.style.display === 'block') {
+        this.miniEmojiPicker.style.display = 'none';
+    } else {
+        if (this.miniCustomEmojiPicker) {
+            this.miniCustomEmojiPicker.style.display = 'none';
+        }
+        this.miniEmojiPicker.style.display = 'block';
+        this.loadMiniEmojis();
+    }
+};
+
+// 切换迷你自定义表情选择器
+ChatClient.prototype.toggleMiniCustomEmojiPicker = function() {
+    if (!this.miniCustomEmojiPicker) return;
+    
+    if (this.miniCustomEmojiPicker.style.display === 'block') {
+        this.miniCustomEmojiPicker.style.display = 'none';
+    } else {
+        if (this.miniEmojiPicker) {
+            this.miniEmojiPicker.style.display = 'none';
+        }
+        this.miniCustomEmojiPicker.style.display = 'block';
+        this.loadMiniCustomEmojis();
+    }
+};
+
+// 加载迷你表情
+ChatClient.prototype.loadMiniEmojis = function() {
+    this.miniEmojiGrid.innerHTML = '';
+    
+    // 获取当前分类
+    const activeCategory = this.miniEmojiPicker.querySelector('.mini-emoji-category-btn.active');
+    const category = activeCategory ? activeCategory.dataset.category : 'wechat_classic';
+    console.log('加载迷你表情，当前类别:', category);
+    
+    // 加载对应分类的表情
+    const emojis = this.getEmojisByCategory(category);
+    console.log('获取到的表情数量:', emojis.length);
+    emojis.slice(0, 24).forEach(emoji => { // 限制数量
+        const emojiDiv = document.createElement('div');
+        emojiDiv.className = 'emoji-item';
+        emojiDiv.textContent = emoji.emoji;
+        emojiDiv.title = emoji.name;
+        emojiDiv.addEventListener('click', () => {
+            this.insertMiniEmoji(emoji.emoji);
+            this.miniEmojiPicker.style.display = 'none';
+        });
+        this.miniEmojiGrid.appendChild(emojiDiv);
+    });
+    
+    // 分类切换事件在初始化时绑定，这里不需要重复绑定
+};
+
+// 加载迷你自定义表情
+ChatClient.prototype.loadMiniCustomEmojis = function() {
+    const miniCustomEmojiEmpty = document.getElementById('miniCustomEmojiEmpty');
+    
+    fetch('/api/custom-emojis')
+        .then(response => response.json())
+        .then(data => {
+            this.miniCustomEmojiGrid.innerHTML = '';
+            
+            // 检查API响应格式
+            const emojis = data.status === 'success' ? data.emojis : [];
+            
+            if (emojis.length === 0) {
+                // 没有自定义表情时显示空状态
+                if (miniCustomEmojiEmpty) {
+                    miniCustomEmojiEmpty.style.display = 'flex';
+                }
+                this.miniCustomEmojiGrid.style.display = 'none';
+            } else {
+                // 有表情时隐藏空状态，显示表情
+                if (miniCustomEmojiEmpty) {
+                    miniCustomEmojiEmpty.style.display = 'none';
+                }
+                this.miniCustomEmojiGrid.style.display = 'grid';
+                
+                emojis.forEach(emoji => {
+                    const img = document.createElement('img');
+                    img.src = emoji.file_path; // 使用 file_path 而不是 filename
+                    img.className = 'custom-emoji-item';
+                    img.title = emoji.name;
+                    img.addEventListener('click', () => {
+                        this.sendMiniCustomEmoji(emoji);
+                        this.miniCustomEmojiPicker.style.display = 'none';
+                    });
+                    this.miniCustomEmojiGrid.appendChild(img);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('加载自定义表情失败:', error);
+            // 出错时也显示空状态
+            if (miniCustomEmojiEmpty) {
+                miniCustomEmojiEmpty.style.display = 'flex';
+            }
+            this.miniCustomEmojiGrid.style.display = 'none';
+        });
+};
+
+// 插入表情到迷你输入框
+ChatClient.prototype.insertMiniEmoji = function(emoji) {
+    const input = this.miniMessageInput;
+    const cursorPos = input.selectionStart;
+    const textBefore = input.value.substring(0, cursorPos);
+    const textAfter = input.value.substring(input.selectionEnd);
+    
+    input.value = textBefore + emoji + textAfter;
+    input.focus();
+    input.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+};
+
+// 发送迷你自定义表情
+ChatClient.prototype.sendMiniCustomEmoji = function(emoji) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket连接未就绪');
+        return;
+    }
+    
+    // 发送自定义表情作为图片消息，与全屏版本保持一致
+    const messageData = {
+        type: 'message',
+        message_type: 'image',
+        message: emoji.name,
+        file_path: emoji.file_path,
+        timestamp: new Date().toISOString()
+    };
+    
+    this.ws.send(JSON.stringify(messageData));
+};
+
+// 处理迷你图片上传
+ChatClient.prototype.handleMiniImageUpload = function(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    // 复用原有的图片上传逻辑
+    Array.from(files).forEach(file => {
+        this.uploadImage(file);
+    });
+    
+    // 清空input
+    event.target.value = '';
+};
+
+// 获取表情分类数据 (简化版)
+ChatClient.prototype.getEmojisByCategory = function(category) {
+    // 如果有全局的表情数据，使用它
+    if (typeof WECHAT_EMOJIS_DATA !== 'undefined' && WECHAT_EMOJIS_DATA[category]) {
+        return WECHAT_EMOJIS_DATA[category].emojis.map(emoji => ({
+            emoji: String.fromCodePoint(parseInt(emoji.unicode, 16)),
+            name: emoji.name
+        }));
+    }
+    
+    // fallback：根据类别返回不同的基础表情
+    const emojisByCategory = {
+        wechat_classic: [
+            {emoji: '😊', name: '微笑'}, {emoji: '😂', name: '笑哭'}, {emoji: '🤣', name: '打滚笑'},
+            {emoji: '😍', name: '花痴'}, {emoji: '🥰', name: '可爱'}, {emoji: '😘', name: '飞吻'},
+            {emoji: '🤔', name: '思考'}, {emoji: '😅', name: '苦笑'}, {emoji: '😇', name: '天使'},
+            {emoji: '🙂', name: '淡定'}, {emoji: '😉', name: '眨眼'}, {emoji: '😌', name: '舒服'}
+        ],
+        smileys: [
+            {emoji: '😀', name: '笑脸'}, {emoji: '😃', name: '开心'}, {emoji: '😄', name: '大笑'},
+            {emoji: '😁', name: '咧嘴笑'}, {emoji: '😆', name: '眯眼笑'}, {emoji: '😊', name: '微笑'},
+            {emoji: '😇', name: '天使'}, {emoji: '🙂', name: '淡定'}, {emoji: '🙃', name: '倒脸'},
+            {emoji: '😉', name: '眨眼'}, {emoji: '😌', name: '舒服'}, {emoji: '😋', name: '美味'}
+        ],
+        people: [
+            {emoji: '👋', name: '挥手'}, {emoji: '🤚', name: '举手'}, {emoji: '🖐️', name: '张开手'},
+            {emoji: '✋', name: '停止'}, {emoji: '🖖', name: '瓦肯礼'}, {emoji: '👌', name: 'OK'},
+            {emoji: '🤌', name: '捏手指'}, {emoji: '🤏', name: '一点点'}, {emoji: '✌️', name: '胜利'},
+            {emoji: '🤞', name: '交叉手指'}, {emoji: '🤟', name: '爱你'}, {emoji: '🤘', name: '摇滚'}
+        ],
+        animals: [
+            {emoji: '🐶', name: '狗'}, {emoji: '🐱', name: '猫'}, {emoji: '🐭', name: '老鼠'},
+            {emoji: '🐹', name: '仓鼠'}, {emoji: '🐰', name: '兔子'}, {emoji: '🦊', name: '狐狸'},
+            {emoji: '🐻', name: '熊'}, {emoji: '🐼', name: '熊猫'}, {emoji: '🐨', name: '考拉'},
+            {emoji: '🐯', name: '老虎'}, {emoji: '🦁', name: '狮子'}, {emoji: '🐮', name: '牛'}
+        ]
+    };
+    
+    return emojisByCategory[category] || emojisByCategory.wechat_classic;
+};
+
+// 为迷你消息添加事件
+ChatClient.prototype.addMiniMessageEvents = function(messageDiv, messageData) {
+    let longPressTimer = null;
+    
+    // 长按开始
+    const startLongPress = (e) => {
+        e.preventDefault();
+        longPressTimer = setTimeout(() => {
+            this.showMiniQuoteMenu(messageDiv, messageData);
+        }, 500);
+    };
+    
+    // 长按结束
+    const endLongPress = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    };
+    
+    // 触摸事件
+    messageDiv.addEventListener('touchstart', startLongPress);
+    messageDiv.addEventListener('touchend', endLongPress);
+    messageDiv.addEventListener('touchmove', endLongPress);
+    
+    // 鼠标事件
+    messageDiv.addEventListener('mousedown', startLongPress);
+    messageDiv.addEventListener('mouseup', endLongPress);
+    messageDiv.addEventListener('mouseleave', endLongPress);
+    
+    // 右键菜单
+    messageDiv.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this.showMiniQuoteMenu(messageDiv, messageData);
+    });
+};
+
+// 显示迷你引用菜单
+ChatClient.prototype.showMiniQuoteMenu = function(messageDiv, messageData) {
+    // 简单的确认对话框
+    if (confirm('引用这条消息？')) {
+        this.quoteMiniMessage(messageData);
+    }
+};
+
+// 引用迷你消息
+ChatClient.prototype.quoteMiniMessage = function(messageData) {
+    const quoteText = `"${messageData.username}: ${messageData.message}" `;
+    this.miniMessageInput.value = quoteText + this.miniMessageInput.value;
+    this.miniMessageInput.focus();
+    this.miniMessageInput.setSelectionRange(quoteText.length, quoteText.length);
+};
+
+// 同步消息到迷你窗口
+ChatClient.prototype.syncMessagesToMiniWindow = function() {
+    if (!this.miniMessagesContainer) {
+        console.log('迷你消息容器不存在');
+        return;
+    }
+    
+    // 清空迷你窗口消息
+    this.miniMessagesContainer.innerHTML = '';
+    
+    // 获取主界面的所有消息
+    const messages = this.messagesContainer.querySelectorAll('.message');
+    // console.log('同步消息到迷你窗口，主界面消息数量:', messages.length);
+    
+    let syncedCount = 0;
+    messages.forEach(messageEl => {
+        // 从DOM元素获取消息数据
+        const messageData = this.extractMessageDataFromElement(messageEl);
+        if (messageData) {
+            this.displayMiniMessage(messageData);
+            syncedCount++;
+        }
+    });
+    
+    // console.log('成功同步消息数量:', syncedCount);
+};
+
+// 从DOM元素提取消息数据
+ChatClient.prototype.extractMessageDataFromElement = function(messageEl) {
+    try {
+        const usernameEl = messageEl.querySelector('.message-username');
+        const contentEl = messageEl.querySelector('.message-text');
+        const timestampEl = messageEl.querySelector('.message-time');
+        const imageEl = messageEl.querySelector('.message-image');
+        
+        // 获取用户名（对于自己的消息可能没有用户名元素）
+        const username = usernameEl ? usernameEl.textContent.trim() : (messageEl.dataset.username || '我');
+        // 时间戳处理：从消息时间元素获取显示时间，或使用当前时间
+        let timestamp;
+        if (timestampEl && timestampEl.textContent) {
+            // 使用当前时间作为时间戳，因为timestampEl.textContent是格式化后的时间显示
+            timestamp = new Date().toISOString();
+        } else {
+            timestamp = new Date().toISOString();
+        }
+        const isOwnMessage = messageEl.classList.contains('message-user');
+        
+        // 检查消息类型
+        if (imageEl) {
+            // 图片消息
+            return {
+                username: username,
+                message: imageEl.src,
+                message_type: 'image',
+                timestamp: timestamp,
+                userId: isOwnMessage ? this.userId : 'other'
+            };
+        } else if (contentEl) {
+            // 文本消息
+            return {
+                username: username,
+                message: contentEl.textContent || contentEl.innerHTML,
+                message_type: 'text',
+                timestamp: timestamp,
+                userId: isOwnMessage ? this.userId : 'other'
+            };
+        } else {
+            console.warn('无法找到消息内容元素:', messageEl);
+            return null;
+        }
+    } catch (error) {
+        console.error('提取消息数据失败:', error, messageEl);
+        return null;
+    }
+};
+
 async function uploadCustomEmoji() {
     const name = document.getElementById('emojiName').value.trim();
     const file = window.selectedEmojiFile;
@@ -2839,6 +3734,10 @@ async function uploadCustomEmoji() {
         if (data.status === 'success') {
             closeCustomEmojiUploadModal();
             window.chatClient.loadCustomEmojis(); // 刷新表情列表
+            // 同时刷新迷你窗口的表情列表
+            if (window.chatClient && window.chatClient.loadMiniCustomEmojis) {
+                window.chatClient.loadMiniCustomEmojis();
+            }
             alert('自定义表情上传成功！');
         } else {
             alert(data.message);

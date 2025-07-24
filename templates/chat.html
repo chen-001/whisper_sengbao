@@ -34,7 +34,48 @@
         </div>
     </div>
 
-    <div class="chat-container">
+    <!-- 伪装页面容器 -->
+    <div class="disguise-container" id="disguiseContainer">
+        <iframe id="disguiseFrame" src="https://liaoxuefeng.com/books/sql/query/where/index.html" 
+                style="width: 100%; height: 100vh; border: none;">
+        </iframe>
+        
+        <!-- 伪装设置面板 -->
+        <div class="disguise-settings" id="disguiseSettings" style="display: none;">
+            <div class="settings-header">
+                <h3>伪装设置</h3>
+                <button class="close-settings-btn" id="closeSettingsBtn">×</button>
+            </div>
+            <div class="settings-body">
+                <div class="form-group">
+                    <label>预设伪装页面：</label>
+                    <select id="presetUrls" class="form-select">
+                        <option value="https://liaoxuefeng.com/books/sql/query/where/index.html">廖雪峰SQL教程</option>
+                        <option value="https://www.runoob.com/python/python-tutorial.html">Python教程</option>
+                        <option value="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript">MDN文档</option>
+                        <option value="https://www.zhihu.com/topic/19554298/hot">知乎编程话题</option>
+                        <option value="custom">自定义网址</option>
+                    </select>
+                </div>
+                <div class="form-group" id="customUrlGroup" style="display: none;">
+                    <label>自定义网址：</label>
+                    <input type="url" id="customUrl" class="form-input" placeholder="输入网址">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="applyDisguiseBtn">应用伪装</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 迷你聊天窗口控制按钮 -->
+    <div class="mini-chat-controls" id="miniChatControls">
+        <button class="toggle-chat-btn" id="toggleChatBtn" title="显示/隐藏聊天窗口">💬</button>
+        <button class="settings-btn" id="settingsBtn" title="伪装设置">⚙️</button>
+        <button class="fullscreen-btn" id="fullscreenBtn" title="全屏聊天模式">🖥️</button>
+    </div>
+
+    <div class="chat-container" id="chatContainer" style="display: none;">
         <header class="chat-header">
             <div class="chat-title">
                 <h1>{{ room_name }}</h1>
@@ -88,6 +129,13 @@
                             <span class="menu-item-icon">📤</span>
                             <span class="menu-item-text">转发消息</span>
                             <span class="menu-item-badge" id="selectedCountMenu">0</span>
+                        </div>
+                        
+                        <div class="menu-divider"></div>
+                        
+                        <div class="menu-item" id="miniModeToggleItem">
+                            <span class="menu-item-icon">🪟</span>
+                            <span class="menu-item-text">切换到迷你模式</span>
                         </div>
                     </div>
                 </div>
@@ -342,6 +390,73 @@
                     <button type="submit" class="btn btn-primary">开始聊天</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 迷你聊天窗口 -->
+    <div class="mini-chat-window" id="miniChatWindow" style="display: none;">
+        <div class="mini-chat-header">
+            <span class="mini-chat-title">{{ room_name }}</span>
+            <div class="mini-chat-header-controls">
+                <button class="mini-btn" id="miniFullscreenBtn" title="全屏模式">🖥️</button>
+                <button class="mini-btn" id="miniHideBtn" title="隐藏窗口">➖</button>
+            </div>
+        </div>
+        
+        <div class="mini-chat-body">
+            <div class="mini-messages-container" id="miniMessagesContainer">
+                <!-- 迷你消息列表 -->
+            </div>
+            
+            <div class="mini-input-container">
+                <div class="mini-input-row">
+                    <div class="mini-input-group">
+                        <input type="text" id="miniMessageInput" placeholder="输入消息..." maxlength="500" disabled>
+                        <button type="button" id="miniCustomEmojiButton" class="mini-btn-icon" title="自定义表情" disabled>🎭</button>
+                        <button type="button" id="miniEmojiButton" class="mini-btn-icon" title="选择表情" disabled>😀</button>
+                        <button type="button" id="miniImageButton" class="mini-btn-icon" title="发送图片" disabled>📎</button>
+                        <input type="file" id="miniImageInput" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="display: none;" multiple>
+                        <input type="file" id="miniCustomEmojiInput" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="display: none;">
+                    </div>
+                    <button type="button" id="miniSendBtn" class="mini-send-btn" disabled>发送</button>
+                </div>
+                
+                <!-- 迷你表情选择器 -->
+                <div class="mini-emoji-picker" id="miniEmojiPicker" style="display: none;">
+                    <div class="mini-emoji-header">
+                        <div class="mini-emoji-categories">
+                            <button class="mini-emoji-category-btn active" data-category="wechat_classic">😊</button>
+                            <button class="mini-emoji-category-btn" data-category="smileys">😀</button>
+                            <button class="mini-emoji-category-btn" data-category="people">👋</button>
+                            <button class="mini-emoji-category-btn" data-category="animals">🐶</button>
+                        </div>
+                    </div>
+                    <div class="mini-emoji-grid" id="miniEmojiGrid">
+                        <!-- 表情列表 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 迷你自定义表情选择器 -->
+            <div class="mini-custom-emoji-picker" id="miniCustomEmojiPicker" style="display: none;">
+                <div class="mini-custom-emoji-header">
+                    <span class="mini-custom-emoji-title">自定义表情</span>
+                    <button class="mini-upload-emoji-btn" id="miniUploadEmojiBtn" title="上传表情">📤</button>
+                </div>
+                <div class="mini-custom-emoji-grid" id="miniCustomEmojiGrid">
+                    <!-- 自定义表情 -->
+                </div>
+                <div class="mini-custom-emoji-empty" id="miniCustomEmojiEmpty" style="display: none;">
+                    <p>还没有自定义表情</p>
+                    <p>点击上方按钮上传第一个表情吧！</p>
+                </div>
+            </div>
+            </div>
+        </div>
+        
+        <div class="mini-status-bar">
+            <span class="mini-connection-status" id="miniConnectionStatus">连接中...</span>
+            <span class="mini-user-count" id="miniUserCount">0人在线</span>
         </div>
     </div>
 
