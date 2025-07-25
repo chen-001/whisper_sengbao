@@ -736,15 +736,21 @@ class ChatClient {
     handleMessage(data) {
         switch (data.type) {
             case 'message':
+                console.log('收到消息:', data);
+                console.log('当前模式状态:', { isFullscreen: this.isFullscreen, isMiniMode: this.isMiniMode });
                 this.displayMessage(data);
                 // 新消息也在迷你窗口显示
                 if (this.miniMessagesContainer) {
+                    console.log('迷你消息容器存在，准备显示迷你消息');
                     // 确保消息数据包含正确的用户标识
                     const messageForMini = {
                         ...data,
                         userId: data.userId || (data.username === this.username ? this.userId : 'other')
                     };
+                    console.log('显示迷你消息:', messageForMini);
                     this.displayMiniMessage(messageForMini);
+                } else {
+                    console.log('迷你消息容器不存在，无法显示迷你消息');
                 }
                 // 如果不是自己发送的消息且页面不在前台，发送通知
                 if (data.username !== this.username && this.notificationsEnabled && !this.isPageVisible) {
@@ -3083,6 +3089,7 @@ ChatClient.prototype.initKeyboardShortcuts = function() {
 
 // 更新迷你模式显示状态
 ChatClient.prototype.updateMiniModeDisplay = function() {
+    console.log('更新迷你模式显示状态:', { isFullscreen: this.isFullscreen, isMiniMode: this.isMiniMode });
     if (this.isFullscreen) {
         // 全屏模式
         document.body.classList.add('fullscreen-chat');
@@ -3090,6 +3097,7 @@ ChatClient.prototype.updateMiniModeDisplay = function() {
         this.miniChatControls.style.display = 'none';
         this.miniChatWindow.style.display = 'none';
         this.chatContainer.style.display = 'block';
+        console.log('设置为全屏模式');
     } else if (this.isMiniMode) {
         // 迷你模式
         document.body.classList.remove('fullscreen-chat');
@@ -3098,6 +3106,7 @@ ChatClient.prototype.updateMiniModeDisplay = function() {
         this.miniChatWindow.style.display = 'block';
         this.chatContainer.style.display = 'none';
         
+        console.log('设置为迷你模式，迷你消息容器:', !!this.miniMessagesContainer);
         // 切换到迷你模式时同步消息
         this.syncMessagesToMiniWindow();
     } else {
@@ -3107,6 +3116,7 @@ ChatClient.prototype.updateMiniModeDisplay = function() {
         this.miniChatControls.style.display = 'flex';
         this.miniChatWindow.style.display = 'none';
         this.chatContainer.style.display = 'none';
+        console.log('设置为隐藏聊天模式');
     }
 };
 
@@ -3242,28 +3252,39 @@ ChatClient.prototype.loadDisplaySettings = function() {
 // 发送迷你消息
 ChatClient.prototype.sendMiniMessage = function() {
     const message = this.miniMessageInput.value.trim();
-    if (!message || !this.isConnected) return;
+    if (!message || !this.isConnected) {
+        console.log('发送迷你消息失败:', !message ? '消息为空' : '未连接');
+        return;
+    }
+    
+    console.log('发送迷你消息:', message);
     
     // 复用原有发送逻辑
-    this.ws.send(JSON.stringify({
+    const messageData = {
         type: 'message',
         message: message,
         username: this.username,
         userId: this.userId,
         timestamp: new Date().toISOString()
-    }));
+    };
+    
+    console.log('发送的消息数据:', messageData);
+    console.log('WebSocket连接状态:', this.ws.readyState);
+    console.log('WebSocket连接状态说明:', this.ws.readyState === WebSocket.OPEN ? 'OPEN' : this.ws.readyState === WebSocket.CONNECTING ? 'CONNECTING' : this.ws.readyState === WebSocket.CLOSING ? 'CLOSING' : 'CLOSED');
+    this.ws.send(JSON.stringify(messageData));
     
     this.miniMessageInput.value = '';
 };
 
 // 在迷你窗口中显示消息
 ChatClient.prototype.displayMiniMessage = function(messageData) {
+    console.log('displayMiniMessage 被调用:', messageData);
     if (!this.miniMessagesContainer) {
         console.log('displayMiniMessage: 迷你消息容器不存在');
         return;
     }
     
-    // console.log('显示迷你消息:', messageData);
+    console.log('迷你消息容器存在，开始显示消息');
     
     const messageDiv = document.createElement('div');
     messageDiv.className = 'mini-message';
