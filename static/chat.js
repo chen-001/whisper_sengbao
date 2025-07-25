@@ -3,7 +3,16 @@
 // 生成与服务器一致的本地时间戳格式
 function getLocalISOString() {
     const now = new Date();
-    return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
+    // 获取本地时间的ISO字符串（不是UTC）
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
 }
 
 class ChatClient {
