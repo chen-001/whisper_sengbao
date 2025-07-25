@@ -1,5 +1,11 @@
 // 聊天室JavaScript逻辑
 
+// 生成与服务器一致的本地时间戳格式
+function getLocalISOString() {
+    const now = new Date();
+    return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
+}
+
 class ChatClient {
     constructor() {
         this.ws = null;
@@ -741,16 +747,13 @@ class ChatClient {
                 this.displayMessage(data);
                 // 新消息也在迷你窗口显示
                 if (this.miniMessagesContainer) {
-                    console.log('迷你消息容器存在，准备显示迷你消息');
                     // 确保消息数据包含正确的用户标识
                     const messageForMini = {
                         ...data,
                         userId: data.userId || (data.username === this.username ? this.userId : 'other')
                     };
-                    console.log('显示迷你消息:', messageForMini);
                     this.displayMiniMessage(messageForMini);
                 } else {
-                    console.log('迷你消息容器不存在，无法显示迷你消息');
                 }
                 // 如果不是自己发送的消息且页面不在前台，发送通知
                 if (data.username !== this.username && this.notificationsEnabled && !this.isPageVisible) {
@@ -780,7 +783,7 @@ class ChatClient {
         const messageData = {
             type: 'message',
             message: message,
-            timestamp: new Date().toISOString()
+            timestamp: getLocalISOString()
         };
         
         // 如果有引用消息，添加引用信息
@@ -1622,7 +1625,7 @@ class ChatClient {
                             message_type: 'image',
                             message: response.filename,  // 使用原始文件名作为消息内容
                             file_path: response.file_path,
-                            timestamp: new Date().toISOString()
+                            timestamp: getLocalISOString()
                         }));
                     } else {
                         alert('上传失败：' + response.message);
@@ -2837,7 +2840,7 @@ class ChatClient {
             message_type: 'image',
             message: emoji.name,
             file_path: emoji.file_path,
-            timestamp: new Date().toISOString()
+            timestamp: getLocalISOString()
         };
         
         // 如果有引用消息，添加引用信息
@@ -3020,7 +3023,6 @@ ChatClient.prototype.initMiniMode = function() {
     
     // 迷你表情类别切换按钮
     const miniEmojiCategoryBtns = document.querySelectorAll('.mini-emoji-category-btn');
-    console.log('找到迷你表情类别按钮数量:', miniEmojiCategoryBtns.length);
     miniEmojiCategoryBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -3089,7 +3091,6 @@ ChatClient.prototype.initKeyboardShortcuts = function() {
 
 // 更新迷你模式显示状态
 ChatClient.prototype.updateMiniModeDisplay = function() {
-    console.log('更新迷你模式显示状态:', { isFullscreen: this.isFullscreen, isMiniMode: this.isMiniMode });
     if (this.isFullscreen) {
         // 全屏模式
         document.body.classList.add('fullscreen-chat');
@@ -3106,7 +3107,6 @@ ChatClient.prototype.updateMiniModeDisplay = function() {
         this.miniChatWindow.style.display = 'block';
         this.chatContainer.style.display = 'none';
         
-        console.log('设置为迷你模式，迷你消息容器:', !!this.miniMessagesContainer);
         // 切换到迷你模式时同步消息
         this.syncMessagesToMiniWindow();
     } else {
@@ -3253,11 +3253,9 @@ ChatClient.prototype.loadDisplaySettings = function() {
 ChatClient.prototype.sendMiniMessage = function() {
     const message = this.miniMessageInput.value.trim();
     if (!message || !this.isConnected) {
-        console.log('发送迷你消息失败:', !message ? '消息为空' : '未连接');
-        return;
+            return;
     }
     
-    console.log('发送迷你消息:', message);
     
     // 复用原有发送逻辑
     const messageData = {
@@ -3265,12 +3263,9 @@ ChatClient.prototype.sendMiniMessage = function() {
         message: message,
         username: this.username,
         userId: this.userId,
-        timestamp: new Date().toISOString()
+        timestamp: getLocalISOString()
     };
     
-    console.log('发送的消息数据:', messageData);
-    console.log('WebSocket连接状态:', this.ws.readyState);
-    console.log('WebSocket连接状态说明:', this.ws.readyState === WebSocket.OPEN ? 'OPEN' : this.ws.readyState === WebSocket.CONNECTING ? 'CONNECTING' : this.ws.readyState === WebSocket.CLOSING ? 'CLOSING' : 'CLOSED');
     this.ws.send(JSON.stringify(messageData));
     
     this.miniMessageInput.value = '';
@@ -3278,15 +3273,10 @@ ChatClient.prototype.sendMiniMessage = function() {
 
 // 在迷你窗口中显示消息
 ChatClient.prototype.displayMiniMessage = function(messageData) {
-    console.log('displayMiniMessage 被调用:', messageData);
     if (!this.miniMessagesContainer) {
-        console.log('displayMiniMessage: 迷你消息容器不存在');
         return;
     }
     
-    console.log('迷你消息容器存在，开始显示消息');
-    console.log('迷你消息容器DOM:', this.miniMessagesContainer);
-    console.log('迷你消息容器当前子元素数量:', this.miniMessagesContainer.children.length);
     
     const messageDiv = document.createElement('div');
     messageDiv.className = 'mini-message';
@@ -3370,7 +3360,6 @@ ChatClient.prototype.displayMiniMessage = function(messageData) {
     this.addMiniMessageEvents(messageDiv, messageData);
     
     // 按时间戳顺序插入消息
-    console.log('准备插入消息到迷你容器');
     this.insertMiniMessageInOrder(messageDiv, messageData.timestamp);
     console.log('消息插入完成，容器子元素数量:', this.miniMessagesContainer.children.length);
     
@@ -3460,7 +3449,6 @@ ChatClient.prototype.loadMiniEmojis = function() {
     // 获取当前分类
     const activeCategory = this.miniEmojiPicker.querySelector('.mini-emoji-category-btn.active');
     const category = activeCategory ? activeCategory.dataset.category : 'wechat_classic';
-    console.log('加载迷你表情，当前类别:', category);
     
     // 加载对应分类的表情
     const emojis = this.getEmojisByCategory(category);
@@ -3553,7 +3541,7 @@ ChatClient.prototype.sendMiniCustomEmoji = function(emoji) {
         message_type: 'image',
         message: emoji.name,
         file_path: emoji.file_path,
-        timestamp: new Date().toISOString()
+        timestamp: getLocalISOString()
     };
     
     this.ws.send(JSON.stringify(messageData));
@@ -3670,7 +3658,6 @@ ChatClient.prototype.quoteMiniMessage = function(messageData) {
 // 同步消息到迷你窗口
 ChatClient.prototype.syncMessagesToMiniWindow = function() {
     if (!this.miniMessagesContainer) {
-        console.log('迷你消息容器不存在');
         return;
     }
     
@@ -3708,7 +3695,7 @@ ChatClient.prototype.extractMessageDataFromElement = function(messageEl) {
         let timestamp = messageEl.dataset.timestamp;
         if (!timestamp) {
             // 如果没有保存的时间戳，尝试从时间元素解析或使用当前时间
-            timestamp = new Date().toISOString();
+            timestamp = getLocalISOString();
         }
         const isOwnMessage = messageEl.classList.contains('message-user');
         
