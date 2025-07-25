@@ -3285,10 +3285,13 @@ ChatClient.prototype.displayMiniMessage = function(messageData) {
     }
     
     console.log('迷你消息容器存在，开始显示消息');
+    console.log('迷你消息容器DOM:', this.miniMessagesContainer);
+    console.log('迷你消息容器当前子元素数量:', this.miniMessagesContainer.children.length);
     
     const messageDiv = document.createElement('div');
     messageDiv.className = 'mini-message';
     messageDiv.dataset.timestamp = messageData.timestamp;
+    console.log('创建的消息元素:', messageDiv);
     
     // 判断是否为自己的消息
     if (messageData.userId === this.userId || messageData.username === this.username) {
@@ -3318,9 +3321,11 @@ ChatClient.prototype.displayMiniMessage = function(messageData) {
         }
     }
     headerDiv.textContent = `${messageData.username} • ${timeStr}`;
+    console.log('创建消息头部:', headerDiv.textContent);
     
     const contentDiv = document.createElement('div');
     contentDiv.className = 'mini-message-content';
+    console.log('创建消息内容容器');
     
     // 处理不同类型的消息内容
     if (messageData.message_type === 'image') {
@@ -3359,12 +3364,15 @@ ChatClient.prototype.displayMiniMessage = function(messageData) {
     
     messageDiv.appendChild(headerDiv);
     messageDiv.appendChild(contentDiv);
+    console.log('消息元素组装完成，内容:', messageDiv.innerHTML);
     
     // 添加右键菜单和长按事件
     this.addMiniMessageEvents(messageDiv, messageData);
     
     // 按时间戳顺序插入消息
+    console.log('准备插入消息到迷你容器');
     this.insertMiniMessageInOrder(messageDiv, messageData.timestamp);
+    console.log('消息插入完成，容器子元素数量:', this.miniMessagesContainer.children.length);
     
     // 限制消息数量
     const messages = this.miniMessagesContainer.querySelectorAll('.mini-message');
@@ -3382,12 +3390,15 @@ ChatClient.prototype.displayMiniMessage = function(messageData) {
 
 // 按时间戳顺序插入迷你消息
 ChatClient.prototype.insertMiniMessageInOrder = function(messageDiv, timestamp) {
+    console.log('insertMiniMessageInOrder 开始执行，时间戳:', timestamp);
     const messages = this.miniMessagesContainer.querySelectorAll('.mini-message');
+    console.log('当前消息数量:', messages.length);
     let inserted = false;
     
     for (let i = messages.length - 1; i >= 0; i--) {
         const existingTimestamp = messages[i].dataset.timestamp;
         if (timestamp >= existingTimestamp) {
+            console.log('在位置', i + 1, '插入消息');
             messages[i].insertAdjacentElement('afterend', messageDiv);
             inserted = true;
             break;
@@ -3395,8 +3406,11 @@ ChatClient.prototype.insertMiniMessageInOrder = function(messageDiv, timestamp) 
     }
     
     if (!inserted) {
+        console.log('在开头插入消息');
         this.miniMessagesContainer.insertBefore(messageDiv, this.miniMessagesContainer.firstChild);
     }
+    
+    console.log('消息插入完成，inserted:', inserted);
 };
 
 // 更新迷你窗口状态
