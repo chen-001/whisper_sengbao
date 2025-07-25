@@ -846,6 +846,7 @@ class ChatClient {
         messageEl.dataset.messageText = data.message;
         messageEl.dataset.messageType = data.message_type || 'text';
         messageEl.dataset.filePath = data.file_path || '';
+        messageEl.dataset.timestamp = data.timestamp;
         
         // 添加多选复选框（默认隐藏）
         const selectCheckbox = document.createElement('div');
@@ -3280,12 +3281,20 @@ ChatClient.prototype.displayMiniMessage = function(messageData) {
     try {
         if (this.formatTime && messageData.timestamp) {
             timeStr = this.formatTime(messageData.timestamp);
-        } else {
-            const date = new Date(messageData.timestamp || new Date());
+        } else if (messageData.timestamp) {
+            const date = new Date(messageData.timestamp);
             timeStr = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            timeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         }
     } catch (error) {
-        timeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        // 当所有解析都失败时，尝试使用原始时间戳，最后再fallback到当前时间
+        try {
+            const date = new Date(messageData.timestamp);
+            timeStr = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+            timeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
     }
     headerDiv.textContent = `${messageData.username} • ${timeStr}`;
     
@@ -3660,12 +3669,10 @@ ChatClient.prototype.extractMessageDataFromElement = function(messageEl) {
         
         // 获取用户名（对于自己的消息可能没有用户名元素）
         const username = usernameEl ? usernameEl.textContent.trim() : (messageEl.dataset.username || '我');
-        // 时间戳处理：从消息时间元素获取显示时间，或使用当前时间
-        let timestamp;
-        if (timestampEl && timestampEl.textContent) {
-            // 使用当前时间作为时间戳，因为timestampEl.textContent是格式化后的时间显示
-            timestamp = new Date().toISOString();
-        } else {
+        // 时间戳处理：优先使用dataset中保存的原始时间戳
+        let timestamp = messageEl.dataset.timestamp;
+        if (!timestamp) {
+            // 如果没有保存的时间戳，尝试从时间元素解析或使用当前时间
             timestamp = new Date().toISOString();
         }
         const isOwnMessage = messageEl.classList.contains('message-user');
